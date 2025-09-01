@@ -70,7 +70,7 @@ class Login extends Users
         $code = $params['code'];
         $username = "user_$phone";
 
-        $this->verify_code(['phone' => $phone, 'code' => $code, 'response' => false]);
+        $this->verify_code(['phone' => $phone, 'code' => $code, 'response' => false, 'register_check' => true]);
 
         $user_by_phone = $this->get_user_by_phone($phone);
         if ($user_by_phone) {
@@ -79,7 +79,7 @@ class Login extends Users
 
         $now = $this->current_time();
 
-        $sql = "INSERT INTO {$this->table['users']} (`username`, `phone`, `password`, `registered_at`) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO {$this->table['users']} (`username`, `phone`, `password`, `registered_at`) VALUES (?, ?, ?, ?)";
         $execute = [
             $username,
             $phone,
@@ -110,7 +110,6 @@ class Login extends Users
             Response::error('ثبت نام کاربر انجام نشد');
         }
     }
-
 
     /**
      * Logs the user in and generates a JWT token.
