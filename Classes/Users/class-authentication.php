@@ -126,11 +126,13 @@ class Authentication extends Database
         $receive_code = $params['code'];
         $get_user_data = $params['user'] ?? null;
         $get_success_response = $params['get_response'] ?? null;
+        $register_check = isset($params['register_check']) && $params['register_check'] === true ? '1' : '0';
 
-        $sql = "SELECT * FROM {$this->table['otps']} WHERE phone = ? AND code = ? AND is_used = '0' AND user_ip = ? ORDER BY expires_at DESC LIMIT 1";
+        $sql = "SELECT * FROM {$this->table['otps']} WHERE phone = ? AND code = ? AND is_used = ? AND user_ip = ? ORDER BY expires_at DESC LIMIT 1";
         $execute = [
             $phone,
             $receive_code,
+            $register_check,
             $this->get_user_ip()
         ];
         $row = $this->getData($sql, $execute);
@@ -216,7 +218,7 @@ class Authentication extends Database
         $phone = $params['phone'];
         $username = $params['username'];
         $role = $params['role'];
-        $time = $params['time'] ? $this->get_timestamp($params['time']) : $this->get_timestamp();
+        $time = isset($params['time']) ? $this->get_timestamp($params['time']) : $this->get_timestamp();
 
         $payload = [
             'user_id' => $user_id,
@@ -227,7 +229,7 @@ class Authentication extends Database
         ];
         $jwt_token = JWT::encode($payload, $_ENV['JWT_SECRET_KEY'], 'HS256');
 
-        return 'EVT09' . $jwt_token;
+        return 'VCA09' . $jwt_token;
     }
 
     /**
@@ -247,7 +249,7 @@ class Authentication extends Database
     public function check_token($token)
     {
         try {
-            if (preg_match('/EVT09(\S+)/', $token, $matches) && isset($matches[1])) {
+            if (preg_match('/VCA09(\S+)/', $token, $matches) && isset($matches[1])) {
                 $jwt_token = $matches[1];
                 $token_decoded = JWT::decode($jwt_token, new Key($_ENV['JWT_SECRET_KEY'], 'HS256'));
                 return $token_decoded;
