@@ -12,7 +12,7 @@ CREATE TABLE
         registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
     ) ENGINE = InnoDB;
 
---اطلاعات پروفایل
+-- اطلاعات پروفایل
 CREATE TABLE
     user_profiles (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -27,7 +27,7 @@ CREATE TABLE
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
---اطلاعات گواهی نامه
+-- اطلاعات گواهی نامه
 CREATE TABLE
     user_certificates (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -39,11 +39,11 @@ CREATE TABLE
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
 
---آدرس پستی
+-- آدرس پستی
 CREATE TABLE
     user_addresses (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
+        user_id INT UNSIGNED NOT NULL,
         province VARCHAR(50),
         city VARCHAR(50),
         address TEXT,
@@ -77,7 +77,7 @@ CREATE TABLE
 CREATE TABLE
     products (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        slug VARCHAR(255) UNIQUE NOT NULL,
+        slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED,
         type ENUM ('course', 'book') NOT NULL,
         thumbnail VARCHAR(255),
@@ -89,15 +89,15 @@ CREATE TABLE
         level ENUM ('beginner', 'intermediate', 'advanced', 'expert'),
         price INT UNSIGNED NOT NULL,
         discount INT UNSIGNED DEFAULT 0,
-        rating_avg DECIMAL(3, 2) DEFAULT 0.00,
-        rating_count INT UNSIGNED DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
     );
 
 -- جزئیات دوره
 CREATE TABLE
     course_details (
-        product_id INT UNSIGNED PRIMARY KEY,
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        product_id INT UNSIGNED NOT NULL,
         type ENUM ('recorded', 'online') NOT NULL,
         lessons INT UNSIGNED,
         duration INT UNSIGNED,
@@ -108,7 +108,8 @@ CREATE TABLE
 -- جزئیات جزوه
 CREATE TABLE
     book_details (
-        product_id INT UNSIGNED PRIMARY KEY,
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        product_id INT UNSIGNED NOT NULL,
         pages INT UNSIGNED,
         format ENUM ('PDF', 'PowerPoint', 'EPUB') NOT NULL,
         size INT UNSIGNED,
@@ -159,7 +160,7 @@ CREATE TABLE
         product_id INT UNSIGNED NOT NULL,
         user_id INT UNSIGNED NOT NULL,
         code VARCHAR(10) NOT NULL,
-        discount_code_id INT,
+        discount_code_id INT UNSIGNED,
         price BIGINT NOT NULL,
         printed BOOLEAN DEFAULT FALSE NOT NULL,
         status ENUM (
@@ -198,14 +199,14 @@ CREATE TABLE
     discount_codes (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         code VARCHAR(20) NOT NULL,
-        product_id INT DEFAULT NULL,
-        category_id INT DEFAULT NULL,
-        instructor_id INT DEFAULT NULL,
+        product_id INT UNSIGNED DEFAULT NULL,
+        category_id INT UNSIGNED DEFAULT NULL,
+        instructor_id INT UNSIGNED DEFAULT NULL,
         discount_percent TINYINT UNSIGNED NOT NULL,
         discount_max INT UNSIGNED NOT NULL,
         discount_constant INT UNSIGNED NOT NULL,
         capacity SMALLINT UNSIGNED NOT NULL,
-        creator_id INT NOT NULL,
+        creator_id INT UNSIGNED NOT NULL,
         expires_on TIMESTAMP NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products (id),
@@ -221,7 +222,7 @@ CREATE TABLE
         product_id INT UNSIGNED,
         user_id INT UNSIGNED NOT NULL,
         subject VARCHAR(50) NOT NULL,
-        s code VARCHAR(10) NOT NULL,
+        code VARCHAR(10) NOT NULL,
         status ENUM (
             'pending',
             ' answered',
@@ -241,11 +242,11 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         ticket_id INT UNSIGNED,
         user_id INT UNSIGNED NOT NULL,
-        read BOOLEAN DEFAULT FALSE NOT NULL,
+        `read` BOOLEAN DEFAULT FALSE NOT NULL,
         message TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
-        FOREIGN KEY (ticket) REFERENCES support_tickets (id),
+        FOREIGN KEY (ticket_id) REFERENCES support_tickets (id),
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
 
@@ -269,7 +270,7 @@ CREATE TABLE
             'update'
         ) DEFAULT 'notice' NOT NULL,
         urgent BOOLEAN DEFAULT FALSE NOT NULL,
-        read BOOLEAN DEFAULT FALSE NOT NULL,
+        `read` BOOLEAN DEFAULT FALSE NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id),
         FOREIGN KEY (reservation_id) REFERENCES reservations (id),
