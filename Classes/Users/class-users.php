@@ -18,7 +18,10 @@ class Users extends Authentication
     use Sanitizer;
     private $user_id;
 
-    private const USER_COLUMNS = 'id, username, first_name, last_name, gender, phone, password, national_id, birth_date, role, avatar, is_active, registered_at';
+    private const USER_COLUMNS = 'id, username, phone, email, password, role, avatar, is_active, registered_at';
+    private const USER_PROFILE_COLUMNS = 'id, user_id, first_name, last_name, gender, birth_date, province, city, created_at, updated_at';
+    private const USER_CERTIFICATE_COLUMNS = 'id, user_id, first_name_en, last_name_en, father_name, national_id, created_at, updated_at';
+    private const USER_ADDRESS_COLUMNS = 'id, user_id, province, city, address, postal_code, receiver_phone, created_at, updated_at';
 
     public function __construct($user_id = null)
     {
@@ -75,7 +78,7 @@ class Users extends Authentication
         return password_verify($password, $user['password']);
     }
 
-    public function check_role($roles = ['user', 'leader', 'admin'], $token = null)
+    public function check_role($roles = ['user', 'instructor', 'admin'], $token = null)
     {
         try {
             $token = $token === null ? getallheaders()['Authorization'] ?? null : $token;
@@ -103,7 +106,7 @@ class Users extends Authentication
             foreach ($roles as $role) {
                 $hasAccess[] = match ($role) {
                     'user' => ($token_decoded->role === 'user' || $token_decoded->role === 'admin'),
-                    'leader' => ($token_decoded->role === 'leader'),
+                    'instructor' => ($token_decoded->role === 'instructor'),
                     'admin' => $token_decoded->role === 'admin',
                     default => false,
                 };

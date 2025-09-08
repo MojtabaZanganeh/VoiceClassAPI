@@ -30,22 +30,26 @@ class Database
      * @var array
      */
     public $table = [
-        'books' => 'books',
+        'book_details' => 'book_details',
         'categories' => 'categories',
-        'courses' => 'courses',
+        'chapters' => 'chapters',
+        'chapter_lessons' => 'chapter_lessons',
+        'course_details' => 'course_details',
         'discount_codes' => 'discount_codes',
-        'medias' => 'medias',
-        'messages' => 'messages',
+        'instructors' => 'instructors',
         'notifications' => 'notifications',
-        'teachers' => 'teachers',
-        'teacher_followers' => 'teacher_followers',
         'otps' => 'otps',
-        'ratings' => 'ratings',
+        'products' => 'products',
         'reports' => 'reports',
         'reservations' => 'reservations',
+        'reviews' => 'reviews',
         'support_tickets' => 'support_tickets',
+        'support_ticket_messages' => 'support_ticket_messages',
         'transactions' => 'transactions',
         'users' => 'users',
+        'user_addresses' => 'user_addresses',
+        'user_certificates' => 'user_certificates',
+        'user_profiles' => 'user_profiles',
     ];
 
     /**
