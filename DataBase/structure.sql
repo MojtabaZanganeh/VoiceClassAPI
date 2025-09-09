@@ -49,7 +49,7 @@ CREATE TABLE
         user_id INT UNSIGNED NOT NULL,
         province VARCHAR(50),
         city VARCHAR(50),
-        address TEXT,
+        full_address TEXT,
         postal_code VARCHAR(10),
         receiver_phone VARCHAR(12),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
