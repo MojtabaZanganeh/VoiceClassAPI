@@ -177,7 +177,6 @@ class Login extends Users
         if ($user) {
             if ($user['role'] == $token_decoded->role) {
                 $user['token'] = $token;
-                $user['avatar'] = isset($user['avatar']) ? $this->get_full_image_url($user['avatar']) : null;
 
                 unset($user['id']);
                 unset($user['password']);
