@@ -19,7 +19,7 @@ class Users extends Authentication
     private $user_id;
 
     private const USER_COLUMNS = 'id, username, phone, email, password, role, avatar, is_active, registered_at';
-    private const USER_PROFILE_COLUMNS = 'id, user_id, first_name, last_name, gender, birth_date, province, city, created_at, updated_at';
+    private const USER_PROFILE_COLUMNS = 'id, user_id, first_name_fa, last_name_fa, gender, birth_date, province, city, created_at, updated_at';
     private const USER_CERTIFICATE_COLUMNS = 'id, user_id, first_name_en, last_name_en, father_name, national_id, created_at, updated_at';
     private const USER_ADDRESS_COLUMNS = 'id, user_id, province, city, address, postal_code, receiver_phone, created_at, updated_at';
 
@@ -55,10 +55,41 @@ class Users extends Authentication
         return $user ? $user['id'] : null;
     }
 
+    public function get_user_profile_data($user_id, $columns = self::USER_PROFILE_COLUMNS): array|null
+    {
+        $sql = "SELECT {$columns} FROM {$this->table['user_profiles']} WHERE user_id = ?";
+        $user_profile = $this->getData($sql, [$user_id]);
+        if (isset($user_profile['birth_date'])) {
+            $user_profile['birth_date'] = $this->convert_miladi_to_jalali($user_profile['birth_date']);
+        }
+        return $user_profile ?: null;
+    }
+
+    public function get_user_certificate_data($user_id, $columns = self::USER_CERTIFICATE_COLUMNS): array|null
+    {
+        $sql = "SELECT {$columns} FROM {$this->table['user_certificates']} WHERE user_id = ?";
+        $user_certificate = $this->getData($sql, [$user_id]);
+        return $user_certificate ?: null;
+    }
+
+    public function get_user_address_data($user_id, $columns = self::USER_ADDRESS_COLUMNS): array|null
+    {
+        $sql = "SELECT {$columns} FROM {$this->table['user_addresses']} WHERE user_id = ?";
+        $user_addresses = $this->getData($sql, [$user_id]);
+        return $user_addresses ?: null;
+    }
+
     public function get_user_by_id($user_id, $columns = self::USER_COLUMNS): array|null
     {
         $sql = "SELECT {$columns} FROM {$this->table['users']} WHERE id = ?";
         $user = $this->getData($sql, [$user_id]);
+
+        $user['profile'] = $this->get_user_profile_data($user_id);
+        $user['certificate'] = $this->get_user_certificate_data($user_id);
+        $user['address'] = $this->get_user_address_data($user_id);
+
+        $user['avatar'] = isset($user['avatar']) ? $this->get_full_image_url($user['avatar']) : null;
+
         return $user ?: null;
     }
 
@@ -69,7 +100,7 @@ class Users extends Authentication
 
         return $user ?: null;
     }
-    
+
 
     public function check_password($phone, $password): bool
     {

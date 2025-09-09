@@ -20,7 +20,8 @@ class Login extends Users
 {
     use Base, Sanitizer;
 
-    public function check_user_registered($params) {
+    public function check_user_registered($params)
+    {
         $this->check_params($params, ['phone']);
 
         $phone = $params['phone'];
@@ -177,6 +178,10 @@ class Login extends Users
             if ($user['role'] == $token_decoded->role) {
                 $user['token'] = $token;
                 $user['avatar'] = isset($user['avatar']) ? $this->get_full_image_url($user['avatar']) : null;
+
+                unset($user['id']);
+                unset($user['password']);
+
                 Response::success('نشست معتبر است', 'user', $user);
             }
         }

@@ -17,8 +17,8 @@ CREATE TABLE
     user_profiles (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT UNSIGNED NOT NULL,
-        first_name VARCHAR(50),
-        last_name VARCHAR(50),
+        first_name_fa VARCHAR(50),
+        last_name_fa VARCHAR(50),
         gender ENUM ('male', 'female'),
         birth_date DATE,
         province VARCHAR(50),
