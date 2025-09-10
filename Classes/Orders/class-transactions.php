@@ -17,10 +17,12 @@ class Transactions extends Orders
         $user = $this->check_role();
 
         $sql = "SELECT
-                    o.id AS order_id,
-                    o.code AS order_code,
-                    o.status AS order_status,
-                    o.total_amount AS order_total,
+                    JSON_OBJECT(
+                        'id', o.id,
+                        'code', o.code,
+                        'total_amount', o.total_amount,
+                        'discount_amount', o.discount_amount
+                    ) AS `order`,
                     t.id AS transaction_id,
                     t.amount,
                     t.status,
@@ -54,6 +56,7 @@ class Transactions extends Orders
         }
 
         foreach ($transactions as &$transaction) {
+            $transaction['order'] = json_decode($transaction['order'], true);
             $transaction['products'] = json_decode($transaction['products'], true);
         }
 

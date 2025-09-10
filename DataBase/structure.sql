@@ -83,20 +83,20 @@ CREATE TABLE
     products (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         slug VARCHAR(100) UNIQUE NOT NULL,
-        category_id INT UNSIGNED,
+        category_id INT UNSIGNED NOT NULL,
         type ENUM ('course', 'book') NOT NULL,
-        thumbnail VARCHAR(255),
+        thumbnail VARCHAR(255) NOT NULL,
         title VARCHAR(255) NOT NULL,
-        introduction TEXT,
-        description TEXT,
-        what_you_learn JSON,
+        introduction TEXT NOT NULL,
+        description TEXT NOT NULL,
+        what_you_learn JSON NOT NULL,
         requirements JSON,
-        level ENUM ('beginner', 'intermediate', 'advanced', 'expert'),
+        level ENUM ('beginner', 'intermediate', 'advanced', 'expert') NOT NULL,
         price INT UNSIGNED NOT NULL,
         discount INT UNSIGNED DEFAULT 0,
         rating_avg TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-        rating_count INT UNSIGNED DEFAULT 0,
-        students INT UNSIGNED DEFAULT 0,
+        rating_count INT UNSIGNED DEFAULT 0 NOT NULL,
+        students INT UNSIGNED DEFAULT 0 NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (category_id) REFERENCES categories (id)
@@ -108,9 +108,9 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
         type ENUM ('recorded', 'online') NOT NULL,
-        lessons INT UNSIGNED,
-        duration INT UNSIGNED,
-        record_progress TINYINT DEFAULT 0,
+        lessons INT UNSIGNED NOT NULL,
+        duration INT UNSIGNED NOT NULL,
+        record_progress TINYINT DEFAULT 0 NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -119,11 +119,11 @@ CREATE TABLE
     book_details (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
-        pages INT UNSIGNED,
+        pages INT UNSIGNED NOT NULL,
         format ENUM ('PDF', 'PowerPoint', 'EPUB') NOT NULL,
-        size INT UNSIGNED,
-        chapters INT UNSIGNED,
-        printed_version BOOLEAN DEFAULT FALSE,
+        size INT UNSIGNED NOT NULL,
+        chapters INT UNSIGNED NOT NULL,
+        printed_version BOOLEAN DEFAULT FALSE NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -133,8 +133,8 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
         title VARCHAR(255) NOT NULL,
-        lessons_count INT UNSIGNED DEFAULT 0,
-        duration INT UNSIGNED DEFAULT 0,
+        lessons_count INT UNSIGNED DEFAULT 0 NOT NULL,
+        duration INT UNSIGNED DEFAULT 0 NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -144,8 +144,8 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         chapter_id INT UNSIGNED NOT NULL,
         title VARCHAR(255) NOT NULL,
-        duration INT UNSIGNED DEFAULT 0,
-        free BOOLEAN DEFAULT FALSE,
+        duration INT UNSIGNED DEFAULT 0 NOT NULL,
+        free BOOLEAN DEFAULT FALSE NOT NULL,
         FOREIGN KEY (chapter_id) REFERENCES chapters (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -155,7 +155,7 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT UNSIGNED NOT NULL,
         professional_title VARCHAR(50) NOT NULL,
-        bio TEXT,
+        bio TEXT NOT NULL,
         categories_id JSON NOT NULL,
         rating_avg TINYINT UNSIGNED DEFAULT 0 NOT NULL,
         rating_count INT UNSIGNED DEFAULT 0 NOT NULL,
@@ -171,8 +171,8 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT UNSIGNED NOT NULL,
         product_id INT UNSIGNED NOT NULL,
-        quantity INT UNSIGNED DEFAULT 1,
-        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        quantity INT UNSIGNED DEFAULT 1 NOT NULL,
+        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id),
         FOREIGN KEY (product_id) REFERENCES products (id)
     ) ENGINE = InnoDB;
@@ -189,11 +189,12 @@ CREATE TABLE
             'sending',
             'finished',
             'canceled'
-        ) DEFAULT 'pending-pay',
+        ) DEFAULT 'pending-pay' NOT NULL,
         discount_code_id INT UNSIGNED,
+        discount_amount INT UNSIGNED DEFAULT 0 NOT NULL,
         total_amount BIGINT UNSIGNED NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id),
         FOREIGN KEY (discount_code_id) REFERENCES discount_codes (id)
     ) ENGINE = InnoDB;
@@ -204,7 +205,7 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         order_id INT UNSIGNED NOT NULL,
         product_id INT UNSIGNED NOT NULL,
-        quantity INT UNSIGNED DEFAULT 1,
+        quantity INT UNSIGNED DEFAULT 1 NOT NULL,
         price BIGINT UNSIGNED NOT NULL,
         FOREIGN KEY (order_id) REFERENCES orders (id),
         FOREIGN KEY (product_id) REFERENCES products (id)
@@ -234,8 +235,8 @@ CREATE TABLE
         course_id INT UNSIGNED NOT NULL,
         user_id INT UNSIGNED NOT NULL,
         order_id INT UNSIGNED NOT NULL,
-        progress TINYINT UNSIGNED DEFAULT 0,
-        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        progress TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (course_id) REFERENCES products (id),
         FOREIGN KEY (user_id) REFERENCES users (id),
         FOREIGN KEY (order_id) REFERENCES orders (id)
