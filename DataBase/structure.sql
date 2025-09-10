@@ -24,7 +24,7 @@ CREATE TABLE
         province VARCHAR(50),
         city VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -38,7 +38,7 @@ CREATE TABLE
         father_name VARCHAR(50),
         national_id VARCHAR(20) UNIQUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
 
@@ -53,7 +53,7 @@ CREATE TABLE
         postal_code VARCHAR(10),
         receiver_phone VARCHAR(12),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -95,8 +95,9 @@ CREATE TABLE
         price INT UNSIGNED NOT NULL,
         discount INT UNSIGNED DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
-    );
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (category_id) REFERENCES categories (id)
+    ) ENGINE = InnoDB;
 
 -- جزئیات دوره
 CREATE TABLE
@@ -108,7 +109,7 @@ CREATE TABLE
         duration INT UNSIGNED,
         record_progress TINYINT DEFAULT 0,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
-    );
+    ) ENGINE = InnoDB;
 
 -- جزئیات جزوه
 CREATE TABLE
@@ -121,7 +122,7 @@ CREATE TABLE
         chapters INT UNSIGNED,
         printed_version BOOLEAN DEFAULT FALSE,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
-    );
+    ) ENGINE = InnoDB;
 
 -- سرفصل ها
 CREATE TABLE
@@ -132,7 +133,7 @@ CREATE TABLE
         lessons_count INT UNSIGNED DEFAULT 0,
         duration INT UNSIGNED DEFAULT 0,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
-    );
+    ) ENGINE = InnoDB;
 
 -- درس های فصل
 CREATE TABLE
@@ -143,7 +144,7 @@ CREATE TABLE
         duration INT UNSIGNED DEFAULT 0,
         free BOOLEAN DEFAULT FALSE,
         FOREIGN KEY (chapter_id) REFERENCES lesson_chapters (id) ON DELETE CASCADE
-    );
+    ) ENGINE = InnoDB;
 
 -- مدرس ها
 CREATE TABLE
@@ -161,7 +162,6 @@ CREATE TABLE
 CREATE TABLE
     reservations (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        type ENUM ('course', 'book') NOT NULL,
         product_id INT UNSIGNED NOT NULL,
         user_id INT UNSIGNED NOT NULL,
         code VARCHAR(10) NOT NULL,

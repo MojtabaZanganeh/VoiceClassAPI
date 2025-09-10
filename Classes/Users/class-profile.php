@@ -16,16 +16,6 @@ class Profile extends Users
 {
     use Sanitizer;
 
-    public function get_profile($params)
-    {
-        $user = $this->check_role();
-
-        unset($user['id']);
-        unset($user['password']);
-
-        Response::success('اطلاعات پروفایل دریافت شد', 'profileData', $user);
-    }
-
     public function update_user_profile($params)
     {
         $user = $this->check_role();
