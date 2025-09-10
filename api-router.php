@@ -21,7 +21,7 @@ $router->add('/auth/reset-password', 'POST', 'Classes\Users\Login', 'reset_passw
 $router->add('/users/update-profile', 'POST', 'Classes\Users\Profile', 'update_user_profile');
 $router->add('/users/update-avatar', 'POST', 'Classes\Users\Profile', 'update_user_avatar');
 
-$router->add('/transactions/get-user-transactions', 'GET', 'Classes\Reservations\Transactions', 'get_user_transactions');
+$router->add('/transactions/get-user-transactions', 'GET', 'Classes\Orders\Transactions', 'get_user_transactions');
 
 $router->add('/notifications/get-user-notifications', 'GET', 'Classes\Notifications\Notifications', 'get_user_notifications');
 

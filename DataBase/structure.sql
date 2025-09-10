@@ -165,35 +165,56 @@ CREATE TABLE
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
 
--- رزروها
+-- سبد خرید
 CREATE TABLE
-    reservations (
+    cart_items (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT UNSIGNED NOT NULL,
         product_id INT UNSIGNED NOT NULL,
+        quantity INT UNSIGNED DEFAULT 1,
+        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (product_id) REFERENCES products (id)
+    ) ENGINE = InnoDB;
+
+-- سفارشات
+CREATE TABLE
+    orders (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT UNSIGNED NOT NULL,
         code VARCHAR(10) NOT NULL,
-        discount_code_id INT UNSIGNED,
-        price BIGINT NOT NULL,
-        printed BOOLEAN DEFAULT FALSE NOT NULL,
         status ENUM (
             'pending-pay',
             'need-approval',
             'sending',
             'finished',
             'canceled'
-        ) DEFAULT 'pending-pay' NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
-        FOREIGN KEY (product_id) REFERENCES products (id),
+        ) DEFAULT 'pending-pay',
+        discount_code_id INT UNSIGNED,
+        total_amount BIGINT UNSIGNED NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id),
         FOREIGN KEY (discount_code_id) REFERENCES discount_codes (id)
+    ) ENGINE = InnoDB;
+
+-- محصولات سفارش
+CREATE TABLE
+    order_items (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        order_id INT UNSIGNED NOT NULL,
+        product_id INT UNSIGNED NOT NULL,
+        quantity INT UNSIGNED DEFAULT 1,
+        price BIGINT UNSIGNED NOT NULL,
+        FOREIGN KEY (order_id) REFERENCES orders (id),
+        FOREIGN KEY (product_id) REFERENCES products (id)
     ) ENGINE = InnoDB;
 
 -- پرداخت ها
 CREATE TABLE
     transactions (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        reservation_id INT UNSIGNED NOT NULL,
+        order_id INT UNSIGNED NOT NULL,
         amount BIGINT UNSIGNED NOT NULL,
         status ENUM ('pending', 'paid', 'failed', 'canceled') DEFAULT 'pending' NOT NULL,
         authority VARCHAR(36),
@@ -203,7 +224,7 @@ CREATE TABLE
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         paid_at TIMESTAMP,
-        FOREIGN KEY (reservation_id) REFERENCES reservations (id)
+        FOREIGN KEY (order_id) REFERENCES orders (id)
     ) ENGINE = InnoDB;
 
 -- دانشجوهای هر دوره
@@ -212,13 +233,13 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         course_id INT UNSIGNED NOT NULL,
         user_id INT UNSIGNED NOT NULL,
-        reservation_id INT UNSIGNED NOT NULL,
+        order_id INT UNSIGNED NOT NULL,
         progress TINYINT UNSIGNED DEFAULT 0,
         enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (course_id) REFERENCES products (id),
         FOREIGN KEY (user_id) REFERENCES users (id),
-        FOREIGN KEY (reservation_id) REFERENCES reservations (id)
-    );
+        FOREIGN KEY (order_id) REFERENCES orders (id)
+    ) ENGINE = InnoDB;
 
 -- کدهای تخفیف
 CREATE TABLE
@@ -281,7 +302,7 @@ CREATE TABLE
     notifications (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED,
-        reservation_id INT UNSIGNED,
+        order_id INT UNSIGNED,
         pay_id INT UNSIGNED,
         ticket_id INT UNSIGNED,
         user_id INT UNSIGNED NOT NULL,
@@ -299,7 +320,7 @@ CREATE TABLE
         `read` BOOLEAN DEFAULT FALSE NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id),
-        FOREIGN KEY (reservation_id) REFERENCES reservations (id),
+        FOREIGN KEY (order_id) REFERENCES orders (id),
         FOREIGN KEY (pay_id) REFERENCES transactions (id),
         FOREIGN KEY (ticket_id) REFERENCES support_tickets (id),
         FOREIGN KEY (user_id) REFERENCES users (id)
@@ -316,7 +337,7 @@ CREATE TABLE
         comment TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
-    );
+    ) ENGINE = InnoDB;
 
 -- گزارش ها
 CREATE TABLE
