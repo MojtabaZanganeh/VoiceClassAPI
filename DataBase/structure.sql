@@ -273,7 +273,7 @@ CREATE TABLE
         code VARCHAR(10) NOT NULL,
         status ENUM (
             'pending',
-            ' answered',
+            'answered',
             'user-response',
             'finished'
         ) DEFAULT 'pending' NOT NULL,
