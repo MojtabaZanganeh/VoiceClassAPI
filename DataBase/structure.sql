@@ -94,6 +94,9 @@ CREATE TABLE
         level ENUM ('beginner', 'intermediate', 'advanced', 'expert'),
         price INT UNSIGNED NOT NULL,
         discount INT UNSIGNED DEFAULT 0,
+        rating_avg TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+        rating_count INT UNSIGNED DEFAULT 0,
+        students INT UNSIGNED DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (category_id) REFERENCES categories (id)
@@ -143,7 +146,7 @@ CREATE TABLE
         title VARCHAR(255) NOT NULL,
         duration INT UNSIGNED DEFAULT 0,
         free BOOLEAN DEFAULT FALSE,
-        FOREIGN KEY (chapter_id) REFERENCES lesson_chapters (id) ON DELETE CASCADE
+        FOREIGN KEY (chapter_id) REFERENCES chapters (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
 -- مدرس ها
@@ -154,6 +157,10 @@ CREATE TABLE
         professional_title VARCHAR(50) NOT NULL,
         bio TEXT,
         categories_id JSON NOT NULL,
+        rating_avg TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+        rating_count INT UNSIGNED DEFAULT 0 NOT NULL,
+        courses_taught INT UNSIGNED DEFAULT 0 NOT NULL,
+        books_written INT UNSIGNED DEFAULT 0 NOT NULL,
         registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
@@ -199,6 +206,20 @@ CREATE TABLE
         FOREIGN KEY (reservation_id) REFERENCES reservations (id)
     ) ENGINE = InnoDB;
 
+-- دانشجوهای هر دوره
+CREATE TABLE
+    course_students (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        course_id INT UNSIGNED NOT NULL,
+        user_id INT UNSIGNED NOT NULL,
+        reservation_id INT UNSIGNED NOT NULL,
+        progress TINYINT UNSIGNED DEFAULT 0,
+        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES products (id),
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (reservation_id) REFERENCES reservations (id)
+    );
+
 -- کدهای تخفیف
 CREATE TABLE
     discount_codes (
@@ -217,7 +238,7 @@ CREATE TABLE
         FOREIGN KEY (product_id) REFERENCES products (id),
         FOREIGN KEY (creator_id) REFERENCES users (id),
         FOREIGN KEY (category_id) REFERENCES categories (id),
-        FOREIGN KEY (instructor_id) REFERENCES instructor_id (id)
+        FOREIGN KEY (instructor_id) REFERENCES instructors (id)
     ) ENGINE = InnoDB;
 
 -- تیکت های پشتیبانی
@@ -279,7 +300,7 @@ CREATE TABLE
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id),
         FOREIGN KEY (reservation_id) REFERENCES reservations (id),
-        FOREIGN KEY (pay_id) REFERENCES payments (id),
+        FOREIGN KEY (pay_id) REFERENCES transactions (id),
         FOREIGN KEY (ticket_id) REFERENCES support_tickets (id),
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
