@@ -24,5 +24,6 @@ $router->add('/users/update-avatar', 'POST', 'Classes\Users\Profile', 'update_us
 $router->add('/transactions/get-user-transactions', 'GET', 'Classes\Orders\Transactions', 'get_user_transactions');
 
 $router->add('/notifications/get-user-notifications', 'GET', 'Classes\Notifications\Notifications', 'get_user_notifications');
+$router->add('/notifications/read-notification', 'POST', 'Classes\Notifications\Notifications', 'read_notification');
 
 $router->add('/support/tickets/get-user-tickets', 'GET', 'Classes\Support\Tickets', 'get_user_tickets');
