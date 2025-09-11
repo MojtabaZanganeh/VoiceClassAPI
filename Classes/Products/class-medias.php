@@ -1,11 +1,11 @@
 <?php
-namespace Classes\Events;
+namespace Classes\Products;
 
 use Classes\Base\Base;
 use Classes\Base\Response;
 use Classes\Base\Sanitizer;
 
-class Medias extends Events
+class Medias extends Products
 {
     use Base, Sanitizer;
 

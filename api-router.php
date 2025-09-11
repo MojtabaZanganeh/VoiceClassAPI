@@ -21,6 +21,10 @@ $router->add('/auth/reset-password', 'POST', 'Classes\Users\Login', 'reset_passw
 $router->add('/users/update-profile', 'POST', 'Classes\Users\Profile', 'update_user_profile');
 $router->add('/users/update-avatar', 'POST', 'Classes\Users\Profile', 'update_user_avatar');
 
+$router->add('/courses/get-user-courses', 'GET', 'Classes\Products\Courses', 'get_user_courses');
+
+$router->add('/books/get-user-books', 'GET', 'Classes\Products\Books', 'get_user_books');
+
 $router->add('/transactions/get-user-transactions', 'GET', 'Classes\Orders\Transactions', 'get_user_transactions');
 
 $router->add('/notifications/get-user-notifications', 'GET', 'Classes\Notifications\Notifications', 'get_user_notifications');
