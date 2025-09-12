@@ -44,6 +44,7 @@ class Database
         'products' => 'products',
         'reports' => 'reports',
         'orders' => 'orders',
+        'order_addresses' => 'order_addresses',
         'order_items' => 'order_items',
         'reviews' => 'reviews',
         'support_tickets' => 'support_tickets',

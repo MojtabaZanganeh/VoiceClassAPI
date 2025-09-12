@@ -82,6 +82,7 @@ CREATE TABLE
 CREATE TABLE
     products (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(39) NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED NOT NULL,
         type ENUM ('course', 'book') NOT NULL,
@@ -193,6 +194,7 @@ CREATE TABLE
         discount_code_id INT UNSIGNED,
         discount_amount INT UNSIGNED DEFAULT 0 NOT NULL,
         total_amount BIGINT UNSIGNED NOT NULL,
+        notes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id),
@@ -209,6 +211,20 @@ CREATE TABLE
         price BIGINT UNSIGNED NOT NULL,
         FOREIGN KEY (order_id) REFERENCES orders (id),
         FOREIGN KEY (product_id) REFERENCES products (id)
+    ) ENGINE = InnoDB;
+
+-- آدرس سفارش
+CREATE TABLE
+    order_addresses (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        order_id INT UNSIGNED NOT NULL,
+        receiver_name VARCHAR(50) NOT NULL,
+        receiver_phone VARCHAR(12) NOT NULL,
+        province VARCHAR(50) NOT NULL,
+        city VARCHAR(50) NOT NULL,
+        postal_code VARCHAR(10) NOT NULL,
+        full_address TEXT NOT NULL,
+        FOREIGN KEY (order_id) REFERENCES orders (id)
     ) ENGINE = InnoDB;
 
 -- پرداخت ها

@@ -48,7 +48,7 @@ class Courses extends Products
         if (!$user_courses) {
             Response::error('خطا در دریافت دوره های کاربر');
         }
-        
+
         foreach ($user_courses as &$user_course) {
             $user_course['instructor'] = json_decode($user_course['instructor']);
             $user_course['thumbnail'] = $this->get_full_image_url($user_course['thumbnail']);
