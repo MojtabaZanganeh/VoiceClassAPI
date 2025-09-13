@@ -8,7 +8,7 @@ use Classes\Base\Response;
 use Classes\Base\Error;
 use DateTime;
 
-class Discounts extends Database
+class Discounts extends Orders
 {
     use Base, Sanitizer;
 
