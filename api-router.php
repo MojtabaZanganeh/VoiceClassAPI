@@ -18,6 +18,7 @@ $router->add('/auth/login', 'POST', 'Classes\Users\Login', 'user_login');
 $router->add('/auth/verify-token', 'POST', 'Classes\Users\Login', 'user_validate');
 $router->add('/auth/reset-password', 'POST', 'Classes\Users\Login', 'reset_password');
 
+$router->add('/users/get-shipping-info', 'GET', 'Classes\Users\Profile', 'get_shipping_info');
 $router->add('/users/update-profile', 'POST', 'Classes\Users\Profile', 'update_user_profile');
 $router->add('/users/update-avatar', 'POST', 'Classes\Users\Profile', 'update_user_avatar');
 

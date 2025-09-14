@@ -28,7 +28,7 @@ class Carts extends Users
             Response::error('محصول یافت نشد');
         }
 
-        if (!in_array($item_version, ['online', 'recorded', 'printed', 'digial'])) {
+        if (!in_array($item_version, ['online', 'recorded', 'printed', 'digital'])) {
             Response::error('نوع محصول به درستی ارسال نشده است');
         }
 
@@ -54,23 +54,22 @@ class Carts extends Users
     {
         $user = $this->check_role();
 
-        $this->check_params($params, ['uuid', 'selected_version', 'quantity']);
+        $this->check_params($params, ['uuid', 'selected_version']);
 
         $item_uuid = $params['uuid'];
         $item_version = $params['selected_version'];
-        $item_quantity = $params['quantity'];
 
         $product = $this->getData("SELECT id FROM {$this->table['products']} WHERE uuid = ?", [$item_uuid]);
         if (!$product) {
             Response::error('محصول یافت نشد');
         }
 
-        if (!in_array($item_version, ['online', 'recorded', 'printed', 'digial'])) {
+        if (!in_array($item_version, ['online', 'recorded', 'printed', 'digital'])) {
             Response::error('نوع محصول به درستی ارسال نشده است');
         }
 
-        $sql = "DELETE FROM {$this->table['cart_items']} WHERE user_id = ? AND product_id = ?";
-        $delete_item = $this->deleteData($sql, [$user['id'], $product['id']]);
+        $sql = "DELETE FROM {$this->table['cart_items']} WHERE user_id = ? AND product_id = ? AND selected_version = ?";
+        $delete_item = $this->deleteData($sql, [$user['id'], $product['id'], $item_version]);
 
         if ($delete_item) {
             Response::success('محصول از سبد خرید حذف شد');
@@ -122,17 +121,21 @@ class Carts extends Users
 
         $cart_items = $this->getData($sql, [$user['id']], true);
 
-        if ($cart_items) {
-            if ($params['return'] === true) {
-                return $cart_items;
+        if (!$cart_items) {
+            if (isset($params['return']) && $params['return'] === true) {
+                return false;
             }
-            Response::success('سبد خرید دریافت شد', 'userCart', $cart_items);
+            Response::success('سبد خرید خالی است');
         }
 
-        if ($params['return'] === true) {
-            return false;
+        foreach ($cart_items as &$item) {
+            $item['thumbnail'] = $this->get_full_image_url($item['thumbnail']);
         }
-        Response::error('خطا در دریافت سبد خرید');
+
+        if (isset($params['return']) && $params['return'] === true) {
+            return $cart_items;
+        }
+        Response::success('سبد خرید دریافت شد', 'userCart', $cart_items);
     }
 
 }

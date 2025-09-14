@@ -16,6 +16,30 @@ class Profile extends Users
 {
     use Sanitizer;
 
+    public function get_shipping_info() {
+        $user = $this->check_role();
+
+        $sql = "SELECT
+                    CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS full_name,
+                    u.phone,
+                    ua.province,
+                    ua.city,
+                    ua.full_address,
+                    ua.postal_code
+                FROM {$this->table['users']} u
+                LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
+                LEFT JOIN {$this->table['user_addresses']} ua ON u.id = ua.user_id
+                WHERE u.id = ?
+        ";
+        $user_shipping_info = $this->getData($sql, [$user['id']]);
+
+        if (!$user_shipping_info) {
+            Response::error('خطا در دریافت اطلاعات کاربر');
+        }
+
+        Response::success('اطلاعات دریافت شد', 'userShippingInfo', $user_shipping_info);
+    }
+
     public function update_user_profile($params)
     {
         $user = $this->check_role();
