@@ -108,7 +108,7 @@ CREATE TABLE
     course_details (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
-        type ENUM ('recorded', 'online') NOT NULL,
+        access_type ENUM ('recorded', 'online') NOT NULL,
         lessons INT UNSIGNED NOT NULL,
         duration INT UNSIGNED NOT NULL,
         record_progress TINYINT DEFAULT 0 NOT NULL,
@@ -120,6 +120,7 @@ CREATE TABLE
     book_details (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
+        access_type ENUM ('printed', 'digital') NOT NULL,
         pages INT UNSIGNED NOT NULL,
         format ENUM ('PDF', 'PowerPoint', 'EPUB') NOT NULL,
         size INT UNSIGNED NOT NULL,
@@ -134,7 +135,7 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
         title VARCHAR(255) NOT NULL,
-        lessons_count INT UNSIGNED DEFAULT 0 NOT NULL,
+        lessons INT UNSIGNED DEFAULT 0 NOT NULL,
         duration INT UNSIGNED DEFAULT 0 NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
@@ -155,11 +156,13 @@ CREATE TABLE
     instructors (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT UNSIGNED NOT NULL,
+        slug VARCHAR(100) UNIQUE NOT NULL,
         professional_title VARCHAR(50) NOT NULL,
         bio TEXT NOT NULL,
         categories_id JSON NOT NULL,
         rating_avg TINYINT UNSIGNED DEFAULT 0 NOT NULL,
         rating_count INT UNSIGNED DEFAULT 0 NOT NULL,
+        students INT UNSIGNED DEFAULT 0 NOT NULL,
         courses_taught INT UNSIGNED DEFAULT 0 NOT NULL,
         books_written INT UNSIGNED DEFAULT 0 NOT NULL,
         registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -172,7 +175,7 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT UNSIGNED NOT NULL,
         product_id INT UNSIGNED NOT NULL,
-        selected_version ENUM ('online', 'recorded', 'printed', 'digital') NOT NULL,
+        access_type ENUM ('online', 'recorded', 'printed', 'digital') NOT NULL,
         quantity INT UNSIGNED DEFAULT 1 NOT NULL,
         added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id),
@@ -208,7 +211,7 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         order_id INT UNSIGNED NOT NULL,
         product_id INT UNSIGNED NOT NULL,
-        selected_version ENUM ('online', 'recorded', 'printed', 'digital') NOT NULL,
+        access_type ENUM ('online', 'recorded', 'printed', 'digital') NOT NULL,
         quantity INT UNSIGNED DEFAULT 1 NOT NULL,
         price BIGINT UNSIGNED NOT NULL,
         FOREIGN KEY (order_id) REFERENCES orders (id),
@@ -350,12 +353,13 @@ CREATE TABLE
     reviews (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
-        student_name VARCHAR(255),
+        user_id INT UNSIGNED NOT NULL,
         avatar VARCHAR(255),
         rating TINYINT CHECK (rating BETWEEN 1 AND 5),
         comment TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
 -- گزارش ها

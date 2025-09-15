@@ -22,8 +22,13 @@ $router->add('/users/get-shipping-info', 'GET', 'Classes\Users\Profile', 'get_sh
 $router->add('/users/update-profile', 'POST', 'Classes\Users\Profile', 'update_user_profile');
 $router->add('/users/update-avatar', 'POST', 'Classes\Users\Profile', 'update_user_avatar');
 
+$router->add('/categories/get-all', 'GET', 'Classes\Products\Categories', 'get_categories');
+
+$router->add('/courses/get-all', 'GET', 'Classes\Products\Courses', 'get_all_courses');
+$router->add('/courses/get-by-slug', 'POST', 'Classes\Products\Courses', 'get_course_by_slug');
 $router->add('/courses/get-user-courses', 'GET', 'Classes\Products\Courses', 'get_user_courses');
 
+$router->add('/books/get-all', 'GET', 'Classes\Products\Books', 'get_all_books');
 $router->add('/books/get-user-books', 'GET', 'Classes\Products\Books', 'get_user_books');
 
 $router->add('/carts/add-item', 'POST', 'Classes\Orders\Carts', 'add_cart_item');

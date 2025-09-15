@@ -55,11 +55,11 @@ class Orders extends Carts
 
         foreach ($order_items as $item) {
             $order_item_id = $this->insertData(
-                "INSERT INTO {$this->table['order_items']} (`order_id`, `product_id`, `selected_version`, `quantity`, `price`) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO {$this->table['order_items']} (`order_id`, `product_id`, `access_type`, `quantity`, `price`) VALUES (?, ?, ?, ?, ?)",
                 [
                     $order_id,
                     $item['id'],
-                    $item['selectd_version'],
+                    $item['access_type'],
                     $item['quantity'],
                     ($item['price'] - $item['discount_amount'])
                 ]

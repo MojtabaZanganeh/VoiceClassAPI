@@ -9,6 +9,53 @@ class Books extends Products
 {
     use Base, Sanitizer;
 
+    public function get_all_books() {
+        $sql = "SELECT
+                    p.id,
+                    p.uuid,
+                    p.slug,
+                    pc.name AS category,
+                    p.thumbnail,
+                    p.title,
+                    JSON_OBJECT(
+                        'name', CONCAT(up.first_name_fa, ' ', up.last_name_fa),
+                        'avatar', u.avatar,
+                        'professional_title', i.professional_title
+                    ) AS instructor,
+                    p.introduction,
+                    p.level,
+                    p.price,
+                    p.discount_amount,
+                    p.rating_avg,
+                    p.rating_count,
+                    p.students,
+                    bd.access_type,
+                    bd.pages,
+                    bd.format
+                FROM {$this->table['products']} p
+                LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id
+                LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
+                LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
+                LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
+                LEFT JOIN {$this->table['book_details']} bd ON p.id = bd.product_id
+                WHERE p.type = 'book'
+                ORDER BY p.created_at DESC
+        ";
+        $all_books = $this->getData($sql,[], true);
+
+        if (!$all_books) {
+            Response::error('خطا در دریافت جزوات');
+        }
+
+        foreach ($all_books as &$book) {
+            $book['thumbnail'] = $this->get_full_image_url($book['thumbnail']);
+            $book['instructor'] = json_decode($book['instructor'], true);
+            $book['instructor']['avatar'] = $this->get_full_image_url($book['instructor']['avatar']);
+        }
+
+        Response::success('جزوات دریافت شد', 'allBooks', $all_books);
+    }
+
     public function get_user_books()
     {
         $user = $this->check_role();

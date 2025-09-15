@@ -17,10 +17,10 @@ class Carts extends Users
     {
         $user = $this->check_role();
 
-        $this->check_params($params, ['uuid', 'selected_version', 'quantity']);
+        $this->check_params($params, ['uuid', 'access_type', 'quantity']);
 
         $item_uuid = $params['uuid'];
-        $item_version = $params['selected_version'];
+        $item_access_type = $params['access_type'];
         $item_quantity = $params['quantity'];
 
         $product = $this->getData("SELECT id FROM {$this->table['products']} WHERE uuid = ?", [$item_uuid]);
@@ -28,16 +28,16 @@ class Carts extends Users
             Response::error('محصول یافت نشد');
         }
 
-        if (!in_array($item_version, ['online', 'recorded', 'printed', 'digital'])) {
+        if (!in_array($item_access_type, ['online', 'recorded', 'printed', 'digital'])) {
             Response::error('نوع محصول به درستی ارسال نشده است');
         }
 
         $item_id = $this->insertData(
-            "INSERT INTO {$this->table['cart_items']} (`user_id`, `product_id`, `selected_version`, `quantity`, `added_at`) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO {$this->table['cart_items']} (`user_id`, `product_id`, `access_type`, `quantity`, `added_at`) VALUES (?, ?, ?, ?, ?)",
             [
                 $user['id'],
                 $product['id'],
-                $item_version,
+                $item_access_type,
                 $item_quantity,
                 $this->current_time()
             ]
@@ -54,22 +54,22 @@ class Carts extends Users
     {
         $user = $this->check_role();
 
-        $this->check_params($params, ['uuid', 'selected_version']);
+        $this->check_params($params, ['uuid', 'access_type']);
 
         $item_uuid = $params['uuid'];
-        $item_version = $params['selected_version'];
+        $item_access_type = $params['access_type'];
 
         $product = $this->getData("SELECT id FROM {$this->table['products']} WHERE uuid = ?", [$item_uuid]);
         if (!$product) {
             Response::error('محصول یافت نشد');
         }
 
-        if (!in_array($item_version, ['online', 'recorded', 'printed', 'digital'])) {
+        if (!in_array($item_access_type, ['online', 'recorded', 'printed', 'digital'])) {
             Response::error('نوع محصول به درستی ارسال نشده است');
         }
 
-        $sql = "DELETE FROM {$this->table['cart_items']} WHERE user_id = ? AND product_id = ? AND selected_version = ?";
-        $delete_item = $this->deleteData($sql, [$user['id'], $product['id'], $item_version]);
+        $sql = "DELETE FROM {$this->table['cart_items']} WHERE user_id = ? AND product_id = ? AND access_type = ?";
+        $delete_item = $this->deleteData($sql, [$user['id'], $product['id'], $item_access_type]);
 
         if ($delete_item) {
             Response::success('محصول از سبد خرید حذف شد');
@@ -107,7 +107,7 @@ class Carts extends Users
                     p.type,
                     p.price,
                     p.discount_amount,
-                    ci.selected_version,
+                    ci.access_type,
                     ci.quantity,
                     CONCAT(up.first_name_fa, ' ', up.last_name_fa)
                 FROM {$this->table['cart_items']} ci
