@@ -9,7 +9,8 @@ class Books extends Products
 {
     use Base, Sanitizer;
 
-    public function get_all_books() {
+    public function get_all_books()
+    {
         $sql = "SELECT
                     p.id,
                     p.uuid,
@@ -41,7 +42,7 @@ class Books extends Products
                 WHERE p.type = 'book'
                 ORDER BY p.created_at DESC
         ";
-        $all_books = $this->getData($sql,[], true);
+        $all_books = $this->getData($sql, [], true);
 
         if (!$all_books) {
             Response::error('خطا در دریافت جزوات');
@@ -54,6 +55,111 @@ class Books extends Products
         }
 
         Response::success('جزوات دریافت شد', 'allBooks', $all_books);
+    }
+
+    public function get_book_by_slug($params)
+    {
+        $this->check_params($params, ['slug']);
+
+        $sql = "SELECT
+                    p.id,
+                    p.uuid,
+                    pc.name AS category,
+                    p.thumbnail,
+                    p.title,
+                    JSON_OBJECT(
+                        'name', CONCAT(up.first_name_fa, ' ', up.last_name_fa),
+                        'avatar', u.avatar,
+                        'professional_title', i.professional_title,
+                        'bio', i.bio,
+                        'rating_avg', i.rating_avg,
+                        'rating_count', i.rating_count,
+                        'students', i.students,
+                        'books_written', i.books_written
+                    ) AS instructor,
+                    p.introduction,
+                    p.description,
+                    p.what_you_learn,
+                    p.requirements,
+                    p.level,
+                    p.price,
+                    p.discount_amount,
+                    p.rating_avg,
+                    p.rating_count,
+                    p.students,
+                    bd.access_type,
+                    bd.pages,
+                    bd.format,
+                    bd.size,
+                    bd.all_lessons_count,
+                    bd.printed_add_price,
+                    bd.printed_discount_amount,
+                    (
+                        SELECT 
+                            IF(COUNT(r.id) > 0,
+                                CONCAT(
+                                    '[',
+                                    GROUP_CONCAT(
+                                        JSON_OBJECT(
+                                            'id', r.id,
+                                            'student', CONCAT(urp.first_name_fa, ' ', urp.last_name_fa),
+                                            'avatar', ur.avatar,
+                                            'rating', r.rating,
+                                            'comment', r.comment,
+                                            'created_at', r.created_at
+                                        ) SEPARATOR ','
+                                    ),
+                                    ']'
+                                ),
+                                '[]'
+                            )
+                        FROM {$this->table['reviews']} r
+                        LEFT JOIN {$this->table['users']} ur ON r.user_id = ur.id
+                        LEFT JOIN {$this->table['user_profiles']} urp ON ur.id = urp.user_id
+                        WHERE r.product_id = p.id
+                    ) AS reviews
+                FROM {$this->table['products']} p
+                LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id
+                LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
+                LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
+                LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
+                LEFT JOIN {$this->table['book_details']} bd ON p.id = bd.product_id
+                WHERE p.slug = ?
+                ORDER BY p.created_at DESC
+                LIMIT 1;
+        ";
+        $book = $this->getData($sql, [$params['slug']]);
+
+        if (!$book) {
+            Response::error('جزوه ای یافت نشد');
+        }
+
+        $book['thumbnail'] = $this->get_full_image_url($book['thumbnail']);
+        $book['instructor'] = json_decode($book['instructor'], true);
+        $book['instructor']['avatar'] = $this->get_full_image_url($book['instructor']['avatar']);
+        $book['what_you_learn'] = json_decode($book['what_you_learn'], true);
+        $book['requirements'] = isset($book['requirements']) ? json_decode($book['requirements'], true) : null;
+        $book['reviews'] = json_decode($book['reviews'], true);
+
+        $chapters_sql = "SELECT id, title, lessons_count, chapter_length 
+                     FROM {$this->table['chapters']} 
+                     WHERE product_id = ?";
+        $chapters = $this->getData($chapters_sql, [$book['id']], true);
+
+        if (!$chapters) {
+            Response::error('خطا در دریافت فصل ها');
+        }
+
+        foreach ($chapters as &$chapter) {
+            $lessons_sql = "SELECT id, title, `length`, free 
+                        FROM {$this->table['chapter_lessons']} 
+                        WHERE chapter_id = ?";
+            $chapter['lessons_detail'] = $this->getData($lessons_sql, [$chapter['id']], true) ?: [];
+        }
+
+        $book['chapters'] = $chapters;
+
+        Response::success('جزوه دریافت شد', 'book', $book);
     }
 
     public function get_user_books()

@@ -94,14 +94,16 @@ class Courses extends Products
                     p.requirements,
                     p.level,
                     p.price,
-                    cd.lessons,
-                    cd.record_progress,
                     p.discount_amount,
                     p.rating_avg,
                     p.rating_count,
                     p.students,
                     cd.access_type,
                     cd.duration,
+                    cd.all_lessons_count,
+                    cd.record_progress,
+                    cd.online_add_price,
+                    cd.online_discount_amount,
                     (
                         SELECT 
                             IF(COUNT(r.id) > 0,
@@ -149,7 +151,7 @@ class Courses extends Products
         $course['requirements'] = json_decode($course['requirements'], true);
         $course['reviews'] = json_decode($course['reviews'], true);
 
-        $chapters_sql = "SELECT id, title, lessons, duration 
+        $chapters_sql = "SELECT id, title, lessons_count, chapter_length 
                      FROM {$this->table['chapters']} 
                      WHERE product_id = ?";
         $chapters = $this->getData($chapters_sql, [$course['id']], true);
@@ -159,13 +161,13 @@ class Courses extends Products
         }
 
         foreach ($chapters as &$chapter) {
-            $lessons_sql = "SELECT id, title, duration, free 
+            $lessons_sql = "SELECT id, title, `length`, free 
                         FROM {$this->table['chapter_lessons']} 
                         WHERE chapter_id = ?";
             $chapter['lessons_detail'] = $this->getData($lessons_sql, [$chapter['id']], true) ?: [];
         }
 
-        $course['curriculum'] = $chapters;
+        $course['chapters'] = $chapters;
 
         Response::success('دوره دریافت شد', 'course', $course);
     }

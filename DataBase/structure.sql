@@ -109,9 +109,11 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
         access_type ENUM ('recorded', 'online') NOT NULL,
-        lessons INT UNSIGNED NOT NULL,
+        all_lessons_count INT UNSIGNED NOT NULL,
         duration INT UNSIGNED NOT NULL,
         record_progress TINYINT DEFAULT 0 NOT NULL,
+        online_add_price INT UNSIGNED NOT NULL,
+        online_discount_amount INT UNSIGNED NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -124,8 +126,9 @@ CREATE TABLE
         pages INT UNSIGNED NOT NULL,
         format ENUM ('PDF', 'PowerPoint', 'EPUB') NOT NULL,
         size INT UNSIGNED NOT NULL,
-        chapters INT UNSIGNED NOT NULL,
-        printed_version BOOLEAN DEFAULT FALSE NOT NULL,
+        all_lessons_count INT UNSIGNED NOT NULL,
+        printed_version INT UNSIGNED NOT NULL,
+        printed_discount_amount INT UNSIGNED NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -135,8 +138,8 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
         title VARCHAR(255) NOT NULL,
-        lessons INT UNSIGNED DEFAULT 0 NOT NULL,
-        duration INT UNSIGNED DEFAULT 0 NOT NULL,
+        lessons_count INT UNSIGNED DEFAULT 0 NOT NULL,
+        chapter_length INT UNSIGNED DEFAULT 0 NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -146,7 +149,7 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         chapter_id INT UNSIGNED NOT NULL,
         title VARCHAR(255) NOT NULL,
-        duration INT UNSIGNED DEFAULT 0 NOT NULL,
+        length INT UNSIGNED DEFAULT 0 NOT NULL,
         free BOOLEAN DEFAULT FALSE NOT NULL,
         FOREIGN KEY (chapter_id) REFERENCES chapters (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;

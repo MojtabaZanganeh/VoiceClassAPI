@@ -29,6 +29,7 @@ $router->add('/courses/get-by-slug', 'POST', 'Classes\Products\Courses', 'get_co
 $router->add('/courses/get-user-courses', 'GET', 'Classes\Products\Courses', 'get_user_courses');
 
 $router->add('/books/get-all', 'GET', 'Classes\Products\Books', 'get_all_books');
+$router->add('/books/get-by-slug', 'POST', 'Classes\Products\Books', 'get_book_by_slug');
 $router->add('/books/get-user-books', 'GET', 'Classes\Products\Books', 'get_user_books');
 
 $router->add('/carts/add-item', 'POST', 'Classes\Orders\Carts', 'add_cart_item');
