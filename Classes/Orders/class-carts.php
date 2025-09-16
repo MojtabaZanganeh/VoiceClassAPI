@@ -32,6 +32,14 @@ class Carts extends Users
             Response::error('نوع محصول به درستی ارسال نشده است');
         }
 
+        $exist_item = $this->getData(
+            "SELECT id FROM {$this->table['cart_items']} WHERE user_id = ? AND product_id = ? AND access_type = ?",
+            [$user['id'], $product['id'], $item_access_type]
+        );
+        if ($exist_item) {
+            Response::error('محصول قبلا به سبد خرید اضافه شده است');
+        }
+
         $item_id = $this->insertData(
             "INSERT INTO {$this->table['cart_items']} (`user_id`, `product_id`, `access_type`, `quantity`, `added_at`) VALUES (?, ?, ?, ?, ?)",
             [
@@ -44,7 +52,8 @@ class Carts extends Users
         );
 
         if ($item_id) {
-            Response::success('محصول به سبد خرید افزوده شد');
+            $cart_items = $this->get_cart_items(['return' => true]);
+            Response::success('محصول به سبد خرید افزوده شد', 'userCart', $cart_items);
         }
 
         Response::error('خطا در افزودن محصول به سبد خرید');
@@ -72,7 +81,8 @@ class Carts extends Users
         $delete_item = $this->deleteData($sql, [$user['id'], $product['id'], $item_access_type]);
 
         if ($delete_item) {
-            Response::success('محصول از سبد خرید حذف شد');
+            $cart_items = $this->get_cart_items(['return' => true]);
+            Response::success('محصول از سبد خرید حذف شد', 'userCart', $cart_items);
         }
 
         Response::error('خطا در حذف محصول از سبد خرید');
@@ -86,7 +96,7 @@ class Carts extends Users
         $delete_item = $this->deleteData($sql, [$user['id']]);
 
         if ($delete_item) {
-            Response::success('سبد خرید خالی شد');
+            Response::success('سبد خرید خالی شد', 'userCart', []);
         }
 
         Response::error('خطا در خالی کردن سبد خرید');
@@ -123,9 +133,9 @@ class Carts extends Users
 
         if (!$cart_items) {
             if (isset($params['return']) && $params['return'] === true) {
-                return false;
+                return [];
             }
-            Response::success('سبد خرید خالی است');
+            Response::success('سبد خرید خالی است', 'userCart', []);
         }
 
         foreach ($cart_items as &$item) {
