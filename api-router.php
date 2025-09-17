@@ -22,6 +22,10 @@ $router->add('/users/get-shipping-info', 'GET', 'Classes\Users\Profile', 'get_sh
 $router->add('/users/update-profile', 'POST', 'Classes\Users\Profile', 'update_user_profile');
 $router->add('/users/update-avatar', 'POST', 'Classes\Users\Profile', 'update_user_avatar');
 
+$router->add('/chapters/get-product-chapters', 'GET', 'Classes\Products\Chapters', 'get_product_chapters');
+
+$router->add('/reviews/get-product-reviews', 'GET', 'Classes\Products\Reviews', 'get_product_reviews');
+
 $router->add('/categories/get-all', 'GET', 'Classes\Products\Categories', 'get_categories');
 
 $router->add('/courses/get-all', 'GET', 'Classes\Products\Courses', 'get_all_courses');

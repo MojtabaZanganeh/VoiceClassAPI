@@ -93,31 +93,7 @@ class Books extends Products
                     bd.size,
                     bd.all_lessons_count,
                     bd.printed_add_price,
-                    bd.printed_discount_amount,
-                    (
-                        SELECT 
-                            IF(COUNT(r.id) > 0,
-                                CONCAT(
-                                    '[',
-                                    GROUP_CONCAT(
-                                        JSON_OBJECT(
-                                            'id', r.id,
-                                            'student', CONCAT(urp.first_name_fa, ' ', urp.last_name_fa),
-                                            'avatar', ur.avatar,
-                                            'rating', r.rating,
-                                            'comment', r.comment,
-                                            'created_at', r.created_at
-                                        ) SEPARATOR ','
-                                    ),
-                                    ']'
-                                ),
-                                '[]'
-                            )
-                        FROM {$this->table['reviews']} r
-                        LEFT JOIN {$this->table['users']} ur ON r.user_id = ur.id
-                        LEFT JOIN {$this->table['user_profiles']} urp ON ur.id = urp.user_id
-                        WHERE r.product_id = p.id
-                    ) AS reviews
+                    bd.printed_discount_amount
                 FROM {$this->table['products']} p
                 LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id
                 LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
@@ -139,25 +115,6 @@ class Books extends Products
         $book['instructor']['avatar'] = $this->get_full_image_url($book['instructor']['avatar']);
         $book['what_you_learn'] = json_decode($book['what_you_learn'], true);
         $book['requirements'] = isset($book['requirements']) ? json_decode($book['requirements'], true) : null;
-        $book['reviews'] = json_decode($book['reviews'], true);
-
-        $chapters_sql = "SELECT id, title, lessons_count, chapter_length 
-                     FROM {$this->table['chapters']} 
-                     WHERE product_id = ?";
-        $chapters = $this->getData($chapters_sql, [$book['id']], true);
-
-        if (!$chapters) {
-            Response::error('خطا در دریافت فصل ها');
-        }
-
-        foreach ($chapters as &$chapter) {
-            $lessons_sql = "SELECT id, title, `length`, free 
-                        FROM {$this->table['chapter_lessons']} 
-                        WHERE chapter_id = ?";
-            $chapter['lessons_detail'] = $this->getData($lessons_sql, [$chapter['id']], true) ?: [];
-        }
-
-        $book['chapters'] = $chapters;
 
         Response::success('جزوه دریافت شد', 'book', $book);
     }
