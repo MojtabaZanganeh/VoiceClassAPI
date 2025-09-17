@@ -127,7 +127,7 @@ CREATE TABLE
         format ENUM ('PDF', 'PowerPoint', 'EPUB') NOT NULL,
         size INT UNSIGNED NOT NULL,
         all_lessons_count INT UNSIGNED NOT NULL,
-        printed_version INT UNSIGNED NOT NULL,
+        printed_add_price INT UNSIGNED NOT NULL,
         printed_discount_amount INT UNSIGNED NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;

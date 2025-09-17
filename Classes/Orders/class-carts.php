@@ -115,17 +115,31 @@ class Carts extends Users
                     p.thumbnail,
                     pc.name AS category,
                     p.type,
-                    p.price,
-                    p.discount_amount,
                     ci.access_type,
                     ci.quantity,
-                    CONCAT(up.first_name_fa, ' ', up.last_name_fa)
+                    CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS instructor,
+                    CASE 
+                        WHEN p.type = 'course' AND ci.access_type = 'online' 
+                            THEN p.price + cd.online_add_price
+                        WHEN p.type = 'book' AND ci.access_type = 'printed'
+                            THEN p.price + bd.printed_add_price
+                        ELSE p.price
+                    END AS price,
+                    CASE 
+                        WHEN p.type = 'course' AND ci.access_type = 'online' 
+                            THEN cd.online_discount_amount
+                        WHEN p.type = 'book' AND ci.access_type = 'printed'
+                            THEN bd.printed_discount_amount
+                        ELSE p.discount_amount
+                    END AS discount_amount
                 FROM {$this->table['cart_items']} ci
                 LEFT JOIN {$this->table['products']} p ON ci.product_id = p.id
                 LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id
                 LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
                 LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
-                    WHERE ci.user_id = ?
+                LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
+                LEFT JOIN {$this->table['book_details']} bd ON p.id = bd.product_id
+                WHERE ci.user_id = ?
                 GROUP BY ci.id, p.id, i.id, up.id
         ";
 
