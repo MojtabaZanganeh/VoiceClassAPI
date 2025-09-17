@@ -88,7 +88,7 @@ class Carts extends Users
         Response::error('خطا در حذف محصول از سبد خرید');
     }
 
-    public function clear_cart_items($params)
+    public function clear_cart_items()
     {
         $user = $this->check_role();
 
@@ -111,6 +111,7 @@ class Carts extends Users
         $sql = "SELECT 
                     $get_product_id
                     p.uuid,
+                    p.slug,
                     p.title,
                     p.thumbnail,
                     pc.name AS category,
