@@ -240,6 +240,7 @@ CREATE TABLE
     transactions (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         order_id INT UNSIGNED NOT NULL,
+        type ENUM ('online', 'card') NOT NULL,
         amount BIGINT UNSIGNED NOT NULL,
         status ENUM ('pending', 'paid', 'failed', 'canceled') DEFAULT 'pending' NOT NULL,
         authority VARCHAR(36),

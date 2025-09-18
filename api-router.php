@@ -40,7 +40,9 @@ $router->add('/carts/add-item', 'POST', 'Classes\Orders\Carts', 'add_cart_item')
 $router->add('/carts/remove-item', 'POST', 'Classes\Orders\Carts', 'remove_cart_item');
 $router->add('/carts/clear-cart', 'GET', 'Classes\Orders\Carts', 'clear_cart_items');
 $router->add('/carts/get-items', 'GET', 'Classes\Orders\Carts', 'get_cart_items');
+
 $router->add('/orders/add-order', 'POST', 'Classes\Orders\Orders', 'add_order');
+$router->add('/orders/get-unpaid-orders', 'GET', 'Classes\Orders\Orders', 'get_unpaid_orders');
 
 $router->add('/transactions/get-user-transactions', 'GET', 'Classes\Orders\Transactions', 'get_user_transactions');
 

@@ -73,4 +73,55 @@ class Orders extends Carts
         $this->commit();
         Response::success('سفارش با موفقیت ثبت شد', 'orderCode', $order_code);
     }
+
+    public function get_order_items($order_id)
+    {
+        $user = $this->check_role();
+
+        $sql = "SELECT
+                    oi.access_type,
+                    oi.quantity,
+                    oi.price,
+                    p.title,
+                    p.slug,
+                    p.type,
+                    p.price AS product_price,
+                    p.discount_amount AS product_discount_amount,
+                    p.thumbnail
+                FROM {$this->table['order_items']} oi
+                LEFT JOIN {$this->table['products']} p ON oi.product_id = p.id
+                WHERE oi.order_id = ?
+        ";
+
+        $order_items = $this->getData($sql, [$order_id], true);
+
+        if ($order_items) {
+            foreach ($order_items as &$item) {
+                $item['thumbnail'] = $this->get_full_image_url($item['thumbnail']);
+            }
+        }
+
+        return $order_items ?? [];
+    }
+
+    public function get_unpaid_orders()
+    {
+        $user = $this->check_role();
+
+        $unpaid_orders = $this->getData(
+            "SELECT id, code, discount_amount, total_amount, created_at, updated_at FROM {$this->table['orders']} WHERE `status` = 'pending-pay'",
+            [],
+            true
+        );
+
+        if (!$unpaid_orders) {
+            Response::success('شما هیچ سفارش پرداخت نشده ای ندارید', 'unpaidOrders', []);
+        }
+
+        foreach ($unpaid_orders as &$order) {
+            $order['products'] = $this->get_order_items($order['id']);
+        }
+
+        Response::success('سفارشات پرداخت نشده دریافت شد', 'unpaidOrders', $unpaid_orders);
+    }
 }
