@@ -73,7 +73,6 @@ class Courses extends Products
         $this->check_params($params, ['slug']);
 
         $sql = "SELECT
-                    p.id,
                     p.uuid,
                     pc.name AS category,
                     p.thumbnail,

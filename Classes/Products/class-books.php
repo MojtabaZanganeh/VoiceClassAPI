@@ -12,7 +12,6 @@ class Books extends Products
     public function get_all_books()
     {
         $sql = "SELECT
-                    p.id,
                     p.uuid,
                     p.slug,
                     pc.name AS category,
@@ -140,7 +139,7 @@ class Books extends Products
                 LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
                 LEFT JOIN {$this->table['orders']} o ON oi.order_id = o.id
                 LEFT JOIN {$this->table['book_details']} bd ON p.id = bd.product_id
-                    WHERE o.user_id = ? AND p.type = 'book'
+                    WHERE o.user_id = ? AND o.status = 'paid' AND p.type = 'book'
                 GROUP BY oi.id, p.id, i.id, up.id, o.id
                 ORDER BY o.created_at DESC
         ";
