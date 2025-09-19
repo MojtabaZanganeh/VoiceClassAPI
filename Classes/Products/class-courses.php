@@ -21,8 +21,63 @@ class Courses extends Products
         return $output;
     }
 
-    public function get_all_courses()
+    public function get_all_courses($params)
     {
+        $query = $params['query'] ?? null;
+        $category = $params['category'] ?? null;
+        $level = $params['level'] ?? null;
+        $access_type = $params['access_type'] ?? null;
+        $sort = $params['sort'] ?? null;
+
+        $where_condition = '';
+        $bindParams = [];
+
+        if ($query) {
+            $where_condition .= " AND p.title LIKE ?";
+            $bindParams[] = "%{$query}%";
+        }
+
+        if ($category && is_numeric($category) && $category > 0) {
+            $where_condition .= " AND p.category_id = ?";
+            $bindParams[] = $category;
+        }
+
+        if ($level && in_array($level, ['beginner', 'intermediate', 'advanced', 'expert'])) {
+            $where_condition .= " AND p.level = ?";
+            $bindParams[] = $level;
+        }
+
+        if ($access_type && in_array($access_type, ['online', 'recorded'])) {
+            $where_condition .= " AND cd.access_type = ?";
+            $bindParams[] = $access_type;
+        }
+
+        switch ($sort) {
+            case 'newest':
+                $sort_condition = 'p.created_at DESC';
+                break;
+
+            case 'rating':
+                $sort_condition = 'p.rating_avg DESC';
+                break;
+
+            case 'students':
+                $sort_condition = 'p.students DESC';
+                break;
+
+            case 'price_asc':
+                $sort_condition = '(p.price - p.discount_amount) ASC';
+                break;
+
+            case 'price_desc':
+                $sort_condition = '(p.price - p.discount_amount) DESC';
+                break;
+
+            default:
+                $sort_condition = 'p.created_at DESC';
+                break;
+        }
+
         $sql = "SELECT
                     p.id,
                     p.uuid,
@@ -50,13 +105,13 @@ class Courses extends Products
                 LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
                 LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
                 LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
-                WHERE p.type = 'course'
-                ORDER BY p.created_at DESC
+                WHERE p.type = 'course' AND p.status = 'verified' $where_condition      
+                ORDER BY $sort_condition
         ";
-        $all_courses = $this->getData($sql, [], true);
+        $all_courses = $this->getData($sql, $bindParams, true);
 
         if (!$all_courses) {
-            Response::error('خطا در دریافت دوره ها');
+            Response::success('دوره ای یافت نشد', 'allCourses', $all_courses);
         }
 
         foreach ($all_courses as &$course) {

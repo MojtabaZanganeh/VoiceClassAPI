@@ -83,6 +83,7 @@ CREATE TABLE
     products (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         uuid VARCHAR(39) NOT NULL,
+        status ENUM('not-completed','need-approval','verified','deleted','admin-deleted') NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED NOT NULL,
         type ENUM ('course', 'book') NOT NULL,
