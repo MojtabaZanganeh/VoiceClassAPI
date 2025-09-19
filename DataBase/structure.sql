@@ -189,6 +189,7 @@ CREATE TABLE
 CREATE TABLE
     orders (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(39) NOT NULL,
         user_id INT UNSIGNED NOT NULL,
         code VARCHAR(10) NOT NULL,
         status ENUM (

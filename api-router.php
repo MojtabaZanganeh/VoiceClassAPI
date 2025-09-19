@@ -42,8 +42,9 @@ $router->add('/carts/clear-cart', 'GET', 'Classes\Orders\Carts', 'clear_cart_ite
 $router->add('/carts/get-items', 'GET', 'Classes\Orders\Carts', 'get_cart_items');
 
 $router->add('/orders/add-order', 'POST', 'Classes\Orders\Orders', 'add_order');
-$router->add('/orders/get-unpaid-orders', 'GET', 'Classes\Orders\Orders', 'get_unpaid_orders');
+$router->add('/orders/get-unpaid-order', 'POST', 'Classes\Orders\Orders', 'get_unpaid_order');
 
+$router->add('/transactions/card-pay', 'POST', 'Classes\Orders\Transactions', 'card_pay_order');
 $router->add('/transactions/get-user-transactions', 'GET', 'Classes\Orders\Transactions', 'get_user_transactions');
 
 $router->add('/notifications/get-user-notifications', 'GET', 'Classes\Notifications\Notifications', 'get_user_notifications');

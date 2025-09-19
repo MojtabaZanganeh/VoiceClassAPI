@@ -12,6 +12,80 @@ class Transactions extends Orders
 {
     use Base, Sanitizer;
 
+    public function card_pay_order($params)
+    {
+        $user = $this->check_role();
+
+        $this->check_params($params, ['method', 'order_id']);
+
+        $method = $params['method'];
+        $order_uuid = $params['order_id'];
+
+        if ($params['method'] === 'receipt') {
+            $this->check_params($params, ['file_name', 'file_type', 'file_size']);
+
+            if ($params['file_size'] > 204800) {
+                Response::error('حداکثر اندازه مجاز ۲۰۰ کیلوبایت است');
+            }
+
+            $upload_dir = 'Uploads/Receipts/';
+            $uuid = $this->generate_uuid();
+            $receipt_url = (isset($_FILES['receipt']) && $_FILES['receipt']['size'] > 0) ? $this->handle_file_upload($_FILES['receipt'], $upload_dir, $uuid) : null;
+
+            if (!$receipt_url) {
+                Response::error('خطا در ذخیره تصویر رسید');
+            }
+        } else {
+            $this->check_params($params, ['lastFourDigits', 'referenceNumber']);
+
+            $card_pan = $params['lastFourDigits'];
+            $ref_id = $params['referenceNumber'];
+        }
+
+        $order = $this->getData(
+            "SELECT * FROM {$this->table['orders']} WHERE uuid = ? AND `status` = 'pending-pay'",
+            [$order_uuid]
+        );
+
+        if (!$order) {
+            Response::error('سفارش یافت نشد');
+        }
+
+        $current_time = $this->current_time();
+
+        $update_transaction = $this->updateData(
+            "UPDATE {$this->table['transactions']} SET `status` = ?, card_pan = ?, ref_id = ?, receipt = ?, updated_at = ?, paid_at = ? WHERE order_id = ?",
+            [
+                'need-approval',
+                $card_pan ?? null,
+                $ref_id ?? null,
+                $receipt_url ?? null,
+                $current_time,
+                $current_time,
+                $order['id']
+            ]
+        );
+
+        if (!$update_transaction) {
+            Response::error('خطا در ثبت اطلاعات پرداخت');
+        }
+
+        $update_order = $this->updateData(
+            "UPDATE {$this->table['orders']} SET `status` = ?, updated_at = ? WHERE id = ?",
+            [
+                'need-approval',
+                $current_time,
+                $order['id']
+            ]
+        );
+
+        if (!$update_order) {
+            Response::error('خطا در تغییر وضعیت سفارش');
+        }
+
+        Response::success('اطلاعات پرداخت ثبت شد');
+    }
+
     public function get_user_transactions()
     {
         $user = $this->check_role();

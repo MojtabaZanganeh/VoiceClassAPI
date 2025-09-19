@@ -70,14 +70,26 @@ class Orders extends Carts
             }
         }
 
+        $transaction_id = $this->insertData(
+            "INSERT INTO {$this->table['transactions']} (`order_id`, `type`, `amount`, `status`) VALUES (?, ?, ?, ?)",
+            [
+                $order_id,
+                'card',
+                $total_amount,
+                'pending'
+            ]
+        );
+
+        if (!$transaction_id) {
+            Response::error('خطا در ثبت تراکنش');
+        }
+
         $this->commit();
         Response::success('سفارش با موفقیت ثبت شد', 'orderCode', $order_code);
     }
 
-    public function get_order_items($order_id)
+    private function get_order_items($order_id)
     {
-        $user = $this->check_role();
-
         $sql = "SELECT
                     oi.access_type,
                     oi.quantity,
@@ -104,24 +116,24 @@ class Orders extends Carts
         return $order_items ?? [];
     }
 
-    public function get_unpaid_orders()
+    public function get_unpaid_order($params)
     {
         $user = $this->check_role();
 
-        $unpaid_orders = $this->getData(
-            "SELECT id, code, discount_amount, total_amount, created_at, updated_at FROM {$this->table['orders']} WHERE `status` = 'pending-pay'",
-            [],
-            true
+        $this->check_params($params, ['order_id']);
+
+        $unpaid_order = $this->getData(
+            "SELECT id, code, discount_amount, total_amount, created_at, updated_at FROM {$this->table['orders']} WHERE uuid = ? AND user_id = ? AND `status` = 'pending-pay'",
+            [$params['order_id'], $user['id']]
         );
 
-        if (!$unpaid_orders) {
-            Response::success('شما هیچ سفارش پرداخت نشده ای ندارید', 'unpaidOrders', []);
+        if (!$unpaid_order) {
+            Response::success('سفارش یافت نشد', 'unpaidOrders', []);
         }
 
-        foreach ($unpaid_orders as &$order) {
-            $order['products'] = $this->get_order_items($order['id']);
-        }
+        $unpaid_order['products'] = $this->get_order_items($unpaid_order['id']);
+        unset($unpaid_order['id']);
 
-        Response::success('سفارشات پرداخت نشده دریافت شد', 'unpaidOrders', $unpaid_orders);
+        Response::success('سفارش پرداخت نشده دریافت شد', 'unpaidOrder', $unpaid_order);
     }
 }
