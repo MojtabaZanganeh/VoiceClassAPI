@@ -117,7 +117,7 @@ class Courses extends Products
         $all_courses = $this->getData($sql, $bindParams, true);
         
         if (!$all_courses) {
-            Response::success('دوره ای یافت نشد', 'allCourses', $all_courses);
+            Response::success('دوره ای یافت نشد', 'allCourses', []);
         }
 
         foreach ($all_courses as &$course) {
