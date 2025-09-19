@@ -83,6 +83,8 @@ class Users extends Authentication
     {
         $sql = "SELECT {$columns} FROM {$this->table['users']} WHERE id = ?";
         $user = $this->getData($sql, [$user_id]);
+        if (!$user)
+            return null;
 
         $user['profile'] = $this->get_user_profile_data($user_id);
         $user['certificate'] = $this->get_user_certificate_data($user_id);
@@ -96,6 +98,8 @@ class Users extends Authentication
     public function get_user_by_phone($phone, $columns = self::USER_COLUMNS): array|null
     {
         $user_id = $this->get_id_by_phone($phone);
+        if (!$user_id)
+            return null;
         $user = $this->get_user_by_id($user_id, $columns);
 
         return $user ?: null;
