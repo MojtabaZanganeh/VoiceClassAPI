@@ -28,6 +28,8 @@ class Courses extends Products
         $level = $params['level'] ?? null;
         $access_type = $params['access_type'] ?? null;
         $sort = $params['sort'] ?? null;
+        $current_page = $params['current_page'] ?? 0;
+        $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 12) ? $params['per_page_count'] : 12;
 
         $where_condition = '';
         $bindParams = [];
@@ -51,6 +53,9 @@ class Courses extends Products
             $where_condition .= " AND cd.access_type = ?";
             $bindParams[] = $access_type;
         }
+
+        $bindParams[] = $per_page_count;
+        $bindParams[] = $current_page * $per_page_count;
 
         switch ($sort) {
             case 'newest':
@@ -107,9 +112,10 @@ class Courses extends Products
                 LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
                 WHERE p.type = 'course' AND p.status = 'verified' $where_condition      
                 ORDER BY $sort_condition
+                LIMIT ? OFFSET ?
         ";
         $all_courses = $this->getData($sql, $bindParams, true);
-
+        
         if (!$all_courses) {
             Response::success('دوره ای یافت نشد', 'allCourses', $all_courses);
         }
@@ -119,7 +125,6 @@ class Courses extends Products
             $course['instructor'] = json_decode($course['instructor'], true);
             $course['instructor']['avatar'] = $this->get_full_image_url($course['instructor']['avatar']);
         }
-
         Response::success('دوره ها دریافت شد', 'allCourses', $all_courses);
     }
 
