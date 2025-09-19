@@ -17,10 +17,12 @@ class Orders extends Carts
     {
         $user = $this->check_role();
 
-        $order_items = $this->get_cart_items();
+        $order_items = $this->get_cart_items(['return' => true]);
         if (!$order_items) {
             Response::error('خطا در دریافت محصولات سبد خرید');
         }
+
+        $order_uuid = $this->generate_uuid();
 
         $current_time = $this->current_time();
 
@@ -36,8 +38,9 @@ class Orders extends Carts
         $this->beginTransaction();
 
         $order_id = $this->insertData(
-            "INSERT INTO {$this->table['orders']} (`user_id`, `code`, `status`, `discount_code_id`, `discount_amount`, `total_amount`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO {$this->table['orders']} (`uuid`, `user_id`, `code`, `status`, `discount_code_id`, `discount_amount`, `total_amount`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
+                $order_uuid,
                 $user['id'],
                 $order_code,
                 'pending-pay',
@@ -85,7 +88,7 @@ class Orders extends Carts
         }
 
         $this->commit();
-        Response::success('سفارش با موفقیت ثبت شد', 'orderCode', $order_code);
+        Response::success('سفارش با موفقیت ثبت شد', 'orderId', $order_uuid);
     }
 
     private function get_order_items($order_id)
