@@ -88,7 +88,7 @@ class Carts extends Users
         Response::error('خطا در حذف محصول از سبد خرید');
     }
 
-    public function clear_cart_items()
+    public function clear_cart_items($params = [])
     {
         $user = $this->check_role();
 
@@ -96,9 +96,15 @@ class Carts extends Users
         $delete_item = $this->deleteData($sql, [$user['id']]);
 
         if ($delete_item) {
+            if (isset($params['return']) && $params['return'] === true) {
+                return true;
+            }
             Response::success('سبد خرید خالی شد', 'userCart', []);
         }
 
+        if (isset($params['return']) && $params['return'] === true) {
+            return false;
+        }
         Response::error('خطا در خالی کردن سبد خرید');
     }
 

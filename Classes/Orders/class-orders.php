@@ -87,6 +87,8 @@ class Orders extends Carts
             Response::error('خطا در ثبت تراکنش');
         }
 
+        $this->clear_cart_items(['return' => true]);
+
         $this->commit();
         Response::success('سفارش با موفقیت ثبت شد', 'orderId', $order_uuid);
     }
