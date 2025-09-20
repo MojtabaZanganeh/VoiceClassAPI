@@ -86,44 +86,58 @@ class Transactions extends Orders
         Response::success('اطلاعات پرداخت ثبت شد');
     }
 
-    public function get_user_transactions()
+    public function get_user_transactions($params = [])
     {
         $user = $this->check_role();
+
+        $where_condition = ' WHERE o.user_id = ?';
+        $bind_params = [$user['id']];
+        
+        if (isset($params['admin']) && $params['admin'] === true) {
+            $this->check_role(['admin']);
+            $where_condition = '';
+            $bind_params = [];
+        }
 
         $sql = "SELECT
                     JSON_OBJECT(
                         'id', o.id,
                         'code', o.code,
+                        'user_full_name', CONCAT(up.first_name_fa, ' ', up.last_name_fa),
                         'total_amount', o.total_amount,
-                        'discount_amount', o.discount_amount
+                        'discount_amount', o.discount_amount,
+                        'products', CONCAT('[', GROUP_CONCAT(
+                                        JSON_OBJECT(
+                                            'id', p.id,
+                                            'title', p.title,
+                                            'slug', p.slug,
+                                            'type', p.type,
+                                            'quantity', oi.quantity,
+                                            'price', oi.price,
+                                            'access_type', oi.access_type
+                                        )
+                                    ), ']')
                     ) AS `order`,
-                    t.id AS transaction_id,
+                    t.uuid,
                     t.amount,
                     t.status,
+                    t.card_pan,
                     t.ref_id,
+                    t.receipt,
                     t.paid_at,
                     t.created_at,
-                    t.updated_at,
-                    CONCAT('[', GROUP_CONCAT(
-                        JSON_OBJECT(
-                            'id', p.id,
-                            'title', p.title,
-                            'slug', p.slug,
-                            'type', p.type,
-                            'quantity', oi.quantity,
-                            'price', oi.price
-                        )
-                    ), ']') AS products
+                    t.updated_at
                 FROM transactions t
                 LEFT JOIN orders o ON t.order_id = o.id
                 LEFT JOIN order_items oi ON o.id = oi.order_id
                 LEFT JOIN products p ON oi.product_id = p.id
-                WHERE o.user_id = ?
+                LEFT JOIN {$this->table['user_profiles']} up ON o.user_id = up.id
+                $where_condition
                 GROUP BY o.id, t.id
                 ORDER BY o.id;
         ";
 
-        $transactions = $this->getData($sql, [$user['id']], true);
+        $transactions = $this->getData($sql, $bind_params, true);
 
         if (!$transactions) {
             Response::success('تراکنشی یافت نشد');
@@ -131,7 +145,8 @@ class Transactions extends Orders
 
         foreach ($transactions as &$transaction) {
             $transaction['order'] = json_decode($transaction['order'], true);
-            $transaction['products'] = json_decode($transaction['products'], true);
+            $transaction['order']['products'] = json_decode($transaction['order']['products'], true);
+            $transaction['receipt'] = $transaction['receipt'] ? $this->get_full_image_url($transaction['receipt']) : null;
         }
 
         Response::success('تراکنش های شما دریافت شد', 'userTransactions', $transactions);

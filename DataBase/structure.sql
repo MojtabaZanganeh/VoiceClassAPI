@@ -6,7 +6,7 @@ CREATE TABLE
         phone VARCHAR(12) UNIQUE NOT NULL,
         email VARCHAR(254) UNIQUE,
         password TEXT NOT NULL,
-        role ENUM ('user', 'leader', 'admin') DEFAULT 'user' NOT NULL,
+        role ENUM ('user', 'instructor', 'admin') DEFAULT 'user' NOT NULL,
         avatar TEXT,
         is_active BOOLEAN DEFAULT TRUE,
         registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -83,7 +83,13 @@ CREATE TABLE
     products (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         uuid VARCHAR(39) NOT NULL,
-        status ENUM('not-completed','need-approval','verified','deleted','admin-deleted') NOT NULL,
+        status ENUM (
+            'not-completed',
+            'need-approval',
+            'verified',
+            'deleted',
+            'admin-deleted'
+        ) NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED NOT NULL,
         type ENUM ('course', 'book') NOT NULL,
@@ -241,10 +247,11 @@ CREATE TABLE
 CREATE TABLE
     transactions (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(39) NOT NULL,
         order_id INT UNSIGNED NOT NULL,
         type ENUM ('online', 'card') NOT NULL,
         amount BIGINT UNSIGNED NOT NULL,
-        status ENUM ('pending', 'paid', 'failed', 'canceled') DEFAULT 'pending' NOT NULL,
+        status ENUM ('pending-pay', 'paid', 'failed', 'canceled') DEFAULT 'pending' NOT NULL,
         authority VARCHAR(36),
         card_hash VARCHAR(64),
         card_pan VARCHAR(16),

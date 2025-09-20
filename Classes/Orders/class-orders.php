@@ -78,7 +78,7 @@ class Orders extends Carts
             [
                 $order_id,
                 'card',
-                $total_amount,
+                ($total_amount - $discout_amount),
                 'pending'
             ]
         );
