@@ -46,6 +46,8 @@ $router->add('/orders/get-unpaid-order', 'POST', 'Classes\Orders\Orders', 'get_u
 
 $router->add('/transactions/card-pay', 'POST', 'Classes\Orders\Transactions', 'card_pay_order');
 $router->add('/transactions/get-user-transactions', 'GET', 'Classes\Orders\Transactions', 'get_user_transactions');
+$router->add('/transactions/get-all-transactions', 'GET', 'Classes\Orders\Transactions', 'get_all_transactions');
+$router->add('/transactions/admin-action', 'POST', 'Classes\Orders\Transactions', 'admin_action');
 
 $router->add('/notifications/get-user-notifications', 'GET', 'Classes\Notifications\Notifications', 'get_user_notifications');
 $router->add('/notifications/read-notification', 'POST', 'Classes\Notifications\Notifications', 'read_notification');

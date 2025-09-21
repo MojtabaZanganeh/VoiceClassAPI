@@ -251,7 +251,7 @@ CREATE TABLE
         order_id INT UNSIGNED NOT NULL,
         type ENUM ('online', 'card') NOT NULL,
         amount BIGINT UNSIGNED NOT NULL,
-        status ENUM ('pending-pay', 'paid', 'failed', 'canceled') DEFAULT 'pending' NOT NULL,
+        status ENUM ('pending-pay', 'need-approval', 'rejected', 'paid', 'failed', 'canceled') DEFAULT 'pending' NOT NULL,
         authority VARCHAR(36),
         card_hash VARCHAR(64),
         card_pan VARCHAR(16),
