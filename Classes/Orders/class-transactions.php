@@ -95,18 +95,7 @@ class Transactions extends Orders
                         'id', o.id,
                         'code', o.code,
                         'total_amount', o.total_amount,
-                        'discount_amount', o.discount_amount,
-                        'products', CONCAT('[', GROUP_CONCAT(
-                                        JSON_OBJECT(
-                                            'id', p.id,
-                                            'title', p.title,
-                                            'slug', p.slug,
-                                            'type', p.type,
-                                            'quantity', oi.quantity,
-                                            'price', oi.price,
-                                            'access_type', oi.access_type
-                                        )
-                                    ), ']')
+                        'discount_amount', o.discount_amount
                     ) AS `order`,
                     t.uuid,
                     t.type,
@@ -137,7 +126,8 @@ class Transactions extends Orders
 
         foreach ($transactions as &$transaction) {
             $transaction['order'] = json_decode($transaction['order'], true);
-            $transaction['order']['products'] = json_decode($transaction['order']['products'], true);
+            $transaction['order']['products'] = $this->get_order_items($transaction['order']['id']);
+            unset($transaction['order']['id']);
             $transaction['receipt'] = $transaction['receipt'] ? $this->get_full_image_url($transaction['receipt']) : null;
         }
 
@@ -163,14 +153,14 @@ class Transactions extends Orders
         $where_condition = '';
         $bind_params = [];
 
-        if (!empty($params['status'])) {
+        if (!empty($params['status']) && in_array($params['status'], ['pending-pay', 'need-approval', 'paid', 'rejected', 'failed', 'canceled'])) {
             $where_condition .= ' WHERE t.status = ? ';
             $bind_params[] = $params['status'];
         }
 
         if (!empty($params['q'])) {
             $query = $params['q'];
-            $condition = '(u.phone LIKE ? OR CONCAT(up.first_name_fa, " ", up.last_name_fa) LIKE ?)';
+            $condition = '(u.phone LIKE ? OR CONCAT(up.first_name_fa, " ", up.last_name_fa) LIKE ?) OR UPPER(t.ref_id) LIKE UPPER(?)';
             if ($where_condition === '') {
                 $where_condition .= " WHERE $condition";
             } else {
@@ -178,12 +168,13 @@ class Transactions extends Orders
             }
             $bind_params[] = "%$query%";
             $bind_params[] = "%$query%";
+            $bind_params[] = "%$query%";
         }
 
         $current_page = isset($params['current_page']) ? max(((int) $params['current_page'] - 1), 0) : 0;
-        $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 50)
+        $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 20)
             ? (int) $params['per_page_count']
-            : 5;
+            : 20;
 
         $offset = $current_page * $per_page_count;
 
@@ -221,18 +212,7 @@ class Transactions extends Orders
                             ELSE CONCAT(up.first_name_fa, ' ', up.last_name_fa)
                         END,
                     'total_amount', o.total_amount,
-                    'discount_amount', o.discount_amount,
-                    'products', CONCAT('[', GROUP_CONCAT(
-                                    JSON_OBJECT(
-                                        'id', p.id,
-                                        'title', p.title,
-                                        'slug', p.slug,
-                                        'type', p.type,
-                                        'quantity', oi.quantity,
-                                        'price', oi.price,
-                                        'access_type', oi.access_type
-                                    )
-                                ), ']')
+                    'discount_amount', o.discount_amount
                 ) AS `order`,
                 t.uuid,
                 t.type,
@@ -258,7 +238,8 @@ class Transactions extends Orders
 
         foreach ($transactions as &$transaction) {
             $transaction['order'] = json_decode($transaction['order'], true);
-            $transaction['order']['products'] = json_decode($transaction['order']['products'], true);
+            $transaction['order']['products'] = $this->get_order_items($transaction['order']['id']);
+            unset($transaction['order']['id']);
             $transaction['receipt'] = $transaction['receipt'] ? $this->get_full_image_url($transaction['receipt']) : null;
         }
 
@@ -269,7 +250,7 @@ class Transactions extends Orders
     }
 
 
-    public function admin_action($params)
+    public function update_status($params)
     {
         $admin = $this->check_role(['admin']);
 
@@ -278,7 +259,7 @@ class Transactions extends Orders
         $new_status = $params['action'] === 'approve' ? 'paid' : 'rejected';
 
         $update_transaction = $this->updateData(
-            "UPDATE {$this->table['transactions']} SET `status`=? WHERE uuid = ?",
+            "UPDATE {$this->table['transactions']} SET `status` = ? WHERE uuid = ?",
             [
                 $new_status,
                 $params['transaction_id']

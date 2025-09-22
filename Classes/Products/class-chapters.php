@@ -29,7 +29,7 @@ class Chapters extends Products
             if ($user_order) {
                 $order_details = $this->getData("SELECT id, `status` FROM {$this->table['orders']} WHERE id = ?", [$user_order['id']]);
                 if ($order_details) {
-                    if ($order_details['status'] === 'sending' || $order_details['status'] === 'finished') {
+                    if ($order_details['status'] === 'sending' || $order_details['status'] === 'completed') {
                         $course_student = true;
                     }
                 }

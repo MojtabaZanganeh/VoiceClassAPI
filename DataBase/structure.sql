@@ -205,7 +205,8 @@ CREATE TABLE
             'pending-pay',
             'need-approval',
             'sending',
-            'finished',
+            'completed',
+            'rejected',
             'canceled'
         ) DEFAULT 'pending-pay' NOT NULL,
         discount_code_id INT UNSIGNED,

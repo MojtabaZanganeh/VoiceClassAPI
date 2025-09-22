@@ -43,11 +43,13 @@ $router->add('/carts/get-items', 'GET', 'Classes\Orders\Carts', 'get_cart_items'
 
 $router->add('/orders/add-order', 'POST', 'Classes\Orders\Orders', 'add_order');
 $router->add('/orders/get-unpaid-order', 'POST', 'Classes\Orders\Orders', 'get_unpaid_order');
+$router->add('/orders/get-all-orders', 'GET', 'Classes\Orders\Orders', 'get_all_orders');
+$router->add('/orders/update-status', 'POST', 'Classes\Orders\Orders', 'update_status');
 
 $router->add('/transactions/card-pay', 'POST', 'Classes\Orders\Transactions', 'card_pay_order');
 $router->add('/transactions/get-user-transactions', 'GET', 'Classes\Orders\Transactions', 'get_user_transactions');
 $router->add('/transactions/get-all-transactions', 'GET', 'Classes\Orders\Transactions', 'get_all_transactions');
-$router->add('/transactions/admin-action', 'POST', 'Classes\Orders\Transactions', 'admin_action');
+$router->add('/transactions/update-status', 'POST', 'Classes\Orders\Transactions', 'update_status');
 
 $router->add('/notifications/get-user-notifications', 'GET', 'Classes\Notifications\Notifications', 'get_user_notifications');
 $router->add('/notifications/read-notification', 'POST', 'Classes\Notifications\Notifications', 'read_notification');

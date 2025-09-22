@@ -92,8 +92,8 @@ trait Sanitizer
                     Response::not_params(['At Least One Required' => $key, 'Received' => $params]);
                 }
             } else {
-                if (!is_bool($params[$key]) && $params[$key] != '0' && empty($params[$key])) {
-                    Response::not_params([$key => $params[$key], 'Received' => $params]);
+                if (!isset($params[$key]) || (!is_bool($params[$key]) && $params[$key] != '0' && empty($params[$key]))) {
+                    Response::not_params([$key => $params[$key] ?? null, 'Received' => $params]);
                 }
             }
         }
