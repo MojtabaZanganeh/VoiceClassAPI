@@ -180,7 +180,7 @@ class Transactions extends Orders
             $bind_params[] = "%$query%";
         }
 
-        $current_page = max(((int) $params['current_page'] - 1), 0);
+        $current_page = isset($params['current_page']) ? max(((int) $params['current_page'] - 1), 0) : 0;
         $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 50)
             ? (int) $params['per_page_count']
             : 5;

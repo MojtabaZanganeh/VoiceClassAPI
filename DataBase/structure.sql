@@ -158,6 +158,8 @@ CREATE TABLE
         title VARCHAR(255) NOT NULL,
         length INT UNSIGNED DEFAULT 0 NOT NULL,
         free BOOLEAN DEFAULT FALSE NOT NULL,
+        link TEXT NOT NULL,
+        size SMALLINT NOT NULL,
         FOREIGN KEY (chapter_id) REFERENCES chapters (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 

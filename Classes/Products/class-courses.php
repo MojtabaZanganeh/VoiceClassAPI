@@ -115,7 +115,7 @@ class Courses extends Products
                 LIMIT ? OFFSET ?
         ";
         $all_courses = $this->getData($sql, $bindParams, true);
-        
+
         if (!$all_courses) {
             Response::success('دوره ای یافت نشد', 'allCourses', []);
         }
@@ -193,6 +193,7 @@ class Courses extends Products
         $user = $this->check_role();
 
         $sql = "SELECT
+                    p.uuid,
                     p.title,
                     p.thumbnail,
                     JSON_OBJECT(
