@@ -11,16 +11,6 @@ class Courses extends Products
 {
     use Base, Sanitizer;
 
-    private function generate_slug($input, $timestamp = '')
-    {
-        $output = preg_replace('/[^a-zA-Z0-9\s\-_\x{0600}-\x{06FF}]/u', '', $input);
-        $output .= jdate(' d F Y', $timestamp, '', '', 'en');
-        $output = preg_replace('/\s+/', '-', $output);
-        $output = strtolower($output);
-        $output = trim($output, '-');
-        return $output;
-    }
-
     public function get_all_courses($params)
     {
         $query = $params['query'] ?? null;
@@ -161,7 +151,7 @@ class Courses extends Products
                     cd.duration,
                     cd.all_lessons_count,
                     cd.record_progress,
-                    cd.online_add_price,
+                    cd.online_price,
                     cd.online_discount_amount
                 FROM {$this->table['products']} p
                 LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id

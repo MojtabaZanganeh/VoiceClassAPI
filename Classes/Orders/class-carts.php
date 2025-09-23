@@ -127,9 +127,9 @@ class Carts extends Users
                     CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS instructor,
                     CASE 
                         WHEN p.type = 'course' AND ci.access_type = 'online' 
-                            THEN p.price + cd.online_add_price
+                            THEN cd.online_price
                         WHEN p.type = 'book' AND ci.access_type = 'printed'
-                            THEN p.price + bd.printed_add_price
+                            THEN bd.printed_price
                         ELSE p.price
                     END AS price,
                     CASE 

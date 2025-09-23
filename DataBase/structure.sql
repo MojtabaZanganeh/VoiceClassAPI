@@ -93,9 +93,9 @@ CREATE TABLE
         slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED NOT NULL,
         type ENUM ('course', 'book') NOT NULL,
-        thumbnail VARCHAR(255) NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        introduction TEXT NOT NULL,
+        thumbnail VARCHAR(75) NOT NULL,
+        title VARCHAR(75) NOT NULL,
+        introduction VARCHAR(150) NOT NULL,
         description TEXT NOT NULL,
         what_you_learn JSON NOT NULL,
         requirements JSON,
@@ -119,7 +119,7 @@ CREATE TABLE
         all_lessons_count INT UNSIGNED NOT NULL,
         duration INT UNSIGNED NOT NULL,
         record_progress TINYINT DEFAULT 0 NOT NULL,
-        online_add_price INT UNSIGNED NOT NULL,
+        online_price INT UNSIGNED NOT NULL,
         online_discount_amount INT UNSIGNED NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
@@ -134,7 +134,7 @@ CREATE TABLE
         format ENUM ('PDF', 'PowerPoint', 'EPUB') NOT NULL,
         size INT UNSIGNED NOT NULL,
         all_lessons_count INT UNSIGNED NOT NULL,
-        printed_add_price INT UNSIGNED NOT NULL,
+        printed_price INT UNSIGNED NOT NULL,
         printed_discount_amount INT UNSIGNED NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
@@ -144,7 +144,7 @@ CREATE TABLE
     chapters (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
-        title VARCHAR(255) NOT NULL,
+        title VARCHAR(25) NOT NULL,
         lessons_count INT UNSIGNED DEFAULT 0 NOT NULL,
         chapter_length INT UNSIGNED DEFAULT 0 NOT NULL,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
@@ -155,7 +155,7 @@ CREATE TABLE
     chapter_lessons (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         chapter_id INT UNSIGNED NOT NULL,
-        title VARCHAR(255) NOT NULL,
+        title VARCHAR(50) NOT NULL,
         length INT UNSIGNED DEFAULT 0 NOT NULL,
         free BOOLEAN DEFAULT FALSE NOT NULL,
         link TEXT NOT NULL,

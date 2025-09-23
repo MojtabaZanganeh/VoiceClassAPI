@@ -158,7 +158,7 @@ class Books extends Products
                     bd.format,
                     bd.size,
                     bd.all_lessons_count,
-                    bd.printed_add_price,
+                    bd.printed_price,
                     bd.printed_discount_amount
                 FROM {$this->table['products']} p
                 LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id

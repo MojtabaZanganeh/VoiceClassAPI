@@ -205,6 +205,18 @@ trait Sanitizer
                     }
                     break;
 
+                case 'boolean':
+                    if (is_bool($value)) {
+                        return $value;
+                    }
+                    break;
+
+                case 'array':
+                    if (is_array($value)) {
+                        return $value;
+                    }
+                    break;
+
                 default:
                     break;
             }
