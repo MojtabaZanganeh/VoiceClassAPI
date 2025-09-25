@@ -139,6 +139,17 @@ trait Sanitizer
                     }
                     break;
 
+                case 'postal_code':
+                    $code = preg_replace('/[\s\-]/', '', $value); // حذف فاصله و خط تیره
+
+                    if (
+                        preg_match('/^\d{10}$/', $code) &&
+                        !preg_match('/^(\d)\1{9}$/', $code)
+                    ) {
+                        return $value;
+                    }
+                    break;
+
                 case 'password':
                     if (preg_match('/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/', $value)) {
                         return $value;

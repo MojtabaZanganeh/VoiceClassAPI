@@ -278,11 +278,15 @@ trait Base
 
         if ($year > 1600) {
             $jalali_date = gregorian_to_jalali($year, $month, $day, '/');
-            return $jalali_date;
+
+            [$jy, $jm, $jd] = explode('/', $jalali_date);
+
+            return sprintf('%04d/%02d/%02d', $jy, $jm, $jd);
         }
 
         return $miladi_date;
     }
+
 
     public function get_user_ip()
     {
