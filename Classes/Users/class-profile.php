@@ -85,7 +85,7 @@ class Profile extends Users
         $get_previous_avatar = $this->getData("SELECT avatar FROM {$this->table['users']} WHERE id = ?", [$user['id']]);
         $previous_avatar = $get_previous_avatar['avatar'];
 
-        if (is_file($previous_avatar)) {
+        if ($previous_avatar !== null && is_file($previous_avatar)) {
             if (!unlink($previous_avatar)) {
                 error_log("Failed to Delete Previous User Avatar. Avatar: " . $previous_avatar);
             }
