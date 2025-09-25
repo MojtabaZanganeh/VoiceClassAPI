@@ -49,13 +49,24 @@ class Chapters extends Products
             Response::error('خطا در دریافت سرفصل ها');
         }
 
-        $get_link = $course_student ? ', link, size ' : '';
         foreach ($chapters as &$chapter) {
-            $lessons_sql = "SELECT id, title, `length`, free $get_link
-                        FROM {$this->table['chapter_lessons']} 
-                        WHERE chapter_id = ?";
-            $chapter['lessons_detail'] = $this->getData($lessons_sql, [$chapter['id']], true) ?: [];
+            $lessons_sql = "SELECT 
+                                id, title, `length`, free,
+                                CASE 
+                                    WHEN free = 1 OR ? = 1 THEN link 
+                                    ELSE NULL 
+                                END AS link,
+                                CASE 
+                                    WHEN free = 1 OR ? = 1 THEN size 
+                                    ELSE NULL 
+                                END AS size
+                            FROM {$this->table['chapter_lessons']} 
+                            WHERE chapter_id = ?
+                        ";
+
+            $chapter['lessons_detail'] = $this->getData($lessons_sql, [$course_student ? 1 : 0, $course_student ? 1 : 0, $chapter['id']], true) ?: [];
         }
+
 
         Response::success('سرفصل ها دریافت شد', 'productChapters', $chapters);
     }
