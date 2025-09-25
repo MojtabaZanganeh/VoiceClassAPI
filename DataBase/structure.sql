@@ -82,7 +82,7 @@ CREATE TABLE
 CREATE TABLE
     products (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        uuid VARCHAR(39) NOT NULL,
+        uuid VARCHAR(36) NOT NULL,
         status ENUM (
             'not-completed',
             'need-approval',
@@ -136,6 +136,8 @@ CREATE TABLE
         all_lessons_count INT UNSIGNED NOT NULL,
         printed_price INT UNSIGNED NOT NULL,
         printed_discount_amount INT UNSIGNED NOT NULL,
+        demo_link TEXT NOT NULL,
+        digital_link TEXT,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -158,8 +160,8 @@ CREATE TABLE
         title VARCHAR(50) NOT NULL,
         length INT UNSIGNED DEFAULT 0 NOT NULL,
         free BOOLEAN DEFAULT FALSE NOT NULL,
-        link TEXT NOT NULL,
-        size SMALLINT NOT NULL,
+        link TEXT,
+        size SMALLINT,
         FOREIGN KEY (chapter_id) REFERENCES chapters (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
@@ -198,7 +200,7 @@ CREATE TABLE
 CREATE TABLE
     orders (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        uuid VARCHAR(39) NOT NULL,
+        uuid VARCHAR(36) NOT NULL,
         user_id INT UNSIGNED NOT NULL,
         code VARCHAR(10) NOT NULL,
         status ENUM (
@@ -250,7 +252,7 @@ CREATE TABLE
 CREATE TABLE
     transactions (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        uuid VARCHAR(39) NOT NULL,
+        uuid VARCHAR(36) NOT NULL,
         order_id INT UNSIGNED NOT NULL,
         type ENUM ('online', 'card') NOT NULL,
         amount BIGINT UNSIGNED NOT NULL,

@@ -25,6 +25,7 @@ $router->add('/users/update-avatar', 'POST', 'Classes\Users\Profile', 'update_us
 $router->add('/instructors/get-all', 'GET', 'Classes\Instructors\Instructors', 'get_instructors');
 
 $router->add('/products/add-new', 'POST', 'Classes\Products\Products', 'add_new_product');
+$router->add('/products/upload-product-file', 'POST', 'Classes\Products\Products', 'upload_product_file');
 
 $router->add('/chapters/get-product-chapters', 'GET', 'Classes\Products\Chapters', 'get_product_chapters');
 

@@ -121,7 +121,7 @@ trait Base
         }
     }
 
-    public function handle_file_upload($file, $upload_dir, $uuid = null)
+    public function handle_file_upload($file, $upload_dir, $uuid = null, $time = null)
     {
         if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
             return null;
@@ -131,7 +131,7 @@ trait Base
 
         do {
             $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $file_name = $uuid . '.' . $ext;
+            $file_name = sprintf('%s%s.%s', $uuid, $time ? "-$time" : '', $ext);
             $file_target = $upload_dir . $file_name;
         } while (file_exists($file_target));
 
