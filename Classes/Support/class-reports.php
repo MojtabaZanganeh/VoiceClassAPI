@@ -6,7 +6,7 @@ use Classes\Users\Users;
 use Classes\Base\Response;
 use Classes\Base\Sanitizer;
 
-class Reports extends Users
+class Reports extends Support
 {
     use Base, Sanitizer;
 

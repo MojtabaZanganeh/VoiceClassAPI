@@ -162,6 +162,12 @@ trait Sanitizer
                     }
                     break;
 
+                case 'fa_full_name':
+                    if (preg_match('/^[آ-ی\s]{5,50}$/u', $value)) {
+                        return $value;
+                    }
+                    break;
+
                 case 'en_name':
                     if (preg_match('/^[a-zA-Z\s]{2,25}$/', $value)) {
                         return $value;
@@ -212,6 +218,13 @@ trait Sanitizer
 
                 case 'email':
                     if (filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                        return $value;
+                    }
+                    break;
+
+                case 'url':
+                case 'link':
+                    if (filter_var($value, FILTER_VALIDATE_URL)) {
                         return $value;
                     }
                     break;

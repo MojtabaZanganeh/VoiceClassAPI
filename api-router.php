@@ -59,4 +59,5 @@ $router->add('/transactions/update-status', 'POST', 'Classes\Orders\Transactions
 $router->add('/notifications/get-user-notifications', 'GET', 'Classes\Notifications\Notifications', 'get_user_notifications');
 $router->add('/notifications/read-notification', 'POST', 'Classes\Notifications\Notifications', 'read_notification');
 
-$router->add('/support/tickets/get-user-tickets', 'GET', 'Classes\Support\Tickets', 'get_user_tickets');
+$router->add('/support/join-us-request', 'POST', 'Classes\Support\Support', 'join_us_request');
+$router->add('/support/get-user-tickets', 'GET', 'Classes\Support\Tickets', 'get_user_tickets');

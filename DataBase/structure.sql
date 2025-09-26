@@ -256,7 +256,14 @@ CREATE TABLE
         order_id INT UNSIGNED NOT NULL,
         type ENUM ('online', 'card') NOT NULL,
         amount BIGINT UNSIGNED NOT NULL,
-        status ENUM ('pending-pay', 'need-approval', 'rejected', 'paid', 'failed', 'canceled') DEFAULT 'pending' NOT NULL,
+        status ENUM (
+            'pending-pay',
+            'need-approval',
+            'rejected',
+            'paid',
+            'failed',
+            'canceled'
+        ) DEFAULT 'pending' NOT NULL,
         authority VARCHAR(36),
         card_hash VARCHAR(64),
         card_pan VARCHAR(16),
@@ -394,4 +401,18 @@ CREATE TABLE
         FOREIGN KEY (reported_user_id) REFERENCES users (id),
         FOREIGN KEY (reported_product_id) REFERENCES products (id),
         FOREIGN KEY (reported_instructor_id) REFERENCES instructors (id)
+    ) ENGINE = InnoDB;
+
+CREATE TABLE
+    join_us_requests (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(50) NOT NULL,
+        phone VARCHAR(12) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        resume TEXT NOT NULL,
+        demo_course_link TEXT NOT NULL,
+        demo_book_link TEXT,
+        status ENUM ('pending', 'interview', 'rejected', 'approved') NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE = InnoDB;
