@@ -104,7 +104,8 @@ class Books extends Products
                 LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
                 LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
                 LEFT JOIN {$this->table['book_details']} bd ON p.id = bd.product_id
-                WHERE p.type = 'book' AND p.status = 'verified' $where_condition      
+                WHERE p.type = 'book' AND p.status = 'verified' $where_condition
+                GROUP BY p.id
                 ORDER BY $sort_condition
                 LIMIT ? OFFSET ?
         ";
