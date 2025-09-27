@@ -35,6 +35,7 @@ class Instructors extends Users
                 FROM {$this->table['instructors']} i
                 LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
                 LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
+                GROUP BY i.id
         ";
         $all_instructors = $this->getData($sql, [], true);
 

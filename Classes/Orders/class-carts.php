@@ -147,7 +147,7 @@ class Carts extends Users
                 LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
                 LEFT JOIN {$this->table['book_details']} bd ON p.id = bd.product_id
                 WHERE ci.user_id = ?
-                GROUP BY ci.id, p.id, i.id, up.id
+                GROUP BY ci.id
         ";
 
         $cart_items = $this->getData($sql, [$user['id']], true);

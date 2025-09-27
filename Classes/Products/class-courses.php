@@ -199,7 +199,7 @@ class Courses extends Products
                 LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
                 LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
                     WHERE cs.user_id = ?
-                GROUP BY cs.id, p.id, i.id, up.id, cd.id
+                GROUP BY cs.id, p.id
                 ORDER BY cs.enrolled_at DESC
         ";
         $user_courses = $this->getData($sql, [$user['id']], true);

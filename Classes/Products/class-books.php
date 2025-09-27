@@ -208,7 +208,7 @@ class Books extends Products
                 LEFT JOIN {$this->table['orders']} o ON oi.order_id = o.id
                 LEFT JOIN {$this->table['book_details']} bd ON p.id = bd.product_id
                     WHERE o.user_id = ? AND o.status = 'paid' AND p.type = 'book'
-                GROUP BY oi.id, p.id, i.id, up.id, o.id
+                GROUP BY oi.id, p.id
                 ORDER BY o.created_at DESC
         ";
         $user_books = $this->getData($sql, [$user['id']], true);
