@@ -241,9 +241,12 @@ class Transactions extends Orders
     {
         $admin = $this->check_role(['admin']);
 
-        $this->check_params($params, ['transaction_id', 'action']);
+        $this->check_params($params, ['transaction_uuid', 'status']);
 
-        $new_status = $params['action'] === 'approve' ? 'paid' : 'rejected';
+        $new_status = $params['status'];
+        if (!in_array($new_status, ['pending-pay', 'need-approval', 'paid', 'rejected', 'canceled', 'failed'])) {
+            Response::error('وضعیت جدید معتبر نیست');
+        }
 
         $db = new Database();
         $db->beginTransaction();
@@ -252,7 +255,7 @@ class Transactions extends Orders
             "UPDATE {$db->table['transactions']} SET `status` = ? WHERE uuid = ?",
             [
                 $new_status,
-                $params['transaction_id']
+                $params['transaction_uuid']
             ]
         );
 
@@ -263,7 +266,7 @@ class Transactions extends Orders
         $order = $db->getData(
             "SELECT order_id FROM {$db->table['transactions']} WHERE uuid = ?",
             [
-                $params['transaction_id']
+                $params['transaction_uuid']
             ]
         );
 
@@ -282,14 +285,28 @@ class Transactions extends Orders
         }
 
         foreach ($items as $item) {
-            $item_status = 'rejected';
+            switch ($new_status) {
+                case 'pending-pay':
+                case 'need-approval':
+                    $item_status = 'pending-pay';
+                    break;
 
-            if ($new_status === 'paid') {
-                if ($item['access_type'] === 'printed') {
-                    $item_status = 'pending-review';
-                } else {
-                    $item_status = 'completed';
-                }
+                case 'paid':
+                    $item_status = $item['access_type'] === 'printed' ? 'pending-review' : 'completed';
+                    break;
+
+                case 'failed':
+                case 'rejected':
+                    $item_status = 'rejected';
+                    break;
+
+                case 'canceled':
+                    $item_status = 'canceled';
+                    break;
+
+                default:
+                    $item_status = 'pending-pay';
+                    break;
             }
 
             $update_item_status[] = $db->updateData(
