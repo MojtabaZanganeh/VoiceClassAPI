@@ -185,15 +185,17 @@ class Courses extends Products
 
         $sql = "SELECT
                     p.uuid,
+                    p.level,
                     p.title,
                     p.thumbnail,
                     JSON_OBJECT(
                     'name', CONCAT(up.first_name_fa, ' ', up.last_name_fa)
                     ) AS instructor,
-                    oi.access_type,
                     cd.duration,
+                    o.uuid AS order_uuid,
+                    oi.access_type,
                     oi.status,
-                    p.level
+                    oi.updated_at
                 FROM {$this->table['orders']} o
                 LEFT JOIN {$this->table['order_items']} oi ON o.id = oi.order_id
                 LEFT JOIN {$this->table['products']} p ON oi.product_id = p.id
