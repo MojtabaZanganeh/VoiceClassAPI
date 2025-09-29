@@ -92,6 +92,7 @@ CREATE TABLE
         ) NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED NOT NULL,
+        instructor_id INT UNSIGNED NOT NULL,
         type ENUM ('course', 'book') NOT NULL,
         thumbnail VARCHAR(75) NOT NULL,
         title VARCHAR(75) NOT NULL,
@@ -102,12 +103,15 @@ CREATE TABLE
         level ENUM ('beginner', 'intermediate', 'advanced', 'expert') NOT NULL,
         price INT UNSIGNED NOT NULL,
         discount_amount INT UNSIGNED DEFAULT 0,
-        rating_avg TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+        rating_avg FLOAT UNSIGNED DEFAULT 0 NOT NULL,
         rating_count INT UNSIGNED DEFAULT 0 NOT NULL,
         students INT UNSIGNED DEFAULT 0 NOT NULL,
+        creator_id INT UNSIGNED NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
-        FOREIGN KEY (category_id) REFERENCES categories (id)
+        FOREIGN KEY (category_id) REFERENCES categories (id),
+        FOREIGN KEY (instructor_id) REFERENCES instructors (id),
+        FOREIGN KEY (creator_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
 
 -- جزئیات دوره
@@ -174,7 +178,7 @@ CREATE TABLE
         professional_title VARCHAR(50) NOT NULL,
         bio TEXT NOT NULL,
         categories_id JSON NOT NULL,
-        rating_avg TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+        rating_avg FLOAT UNSIGNED DEFAULT 0 NOT NULL,
         rating_count INT UNSIGNED DEFAULT 0 NOT NULL,
         students INT UNSIGNED DEFAULT 0 NOT NULL,
         courses_taught INT UNSIGNED DEFAULT 0 NOT NULL,
@@ -206,7 +210,6 @@ CREATE TABLE
         discount_code_id INT UNSIGNED,
         discount_amount INT UNSIGNED DEFAULT 0 NOT NULL,
         total_amount BIGINT UNSIGNED NOT NULL,
-        notes TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id),
@@ -265,7 +268,7 @@ CREATE TABLE
             'paid',
             'failed',
             'canceled'
-        ) DEFAULT 'pending' NOT NULL,
+        ) DEFAULT 'pending-pay' NOT NULL,
         authority VARCHAR(36),
         card_hash VARCHAR(64),
         card_pan VARCHAR(16),
