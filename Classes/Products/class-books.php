@@ -160,7 +160,8 @@ class Books extends Products
                     bd.size,
                     bd.all_lessons_count,
                     bd.printed_price,
-                    bd.printed_discount_amount
+                    bd.printed_discount_amount,
+                    bd.demo_link
                 FROM {$this->table['products']} p
                 LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id
                 LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
@@ -180,6 +181,7 @@ class Books extends Products
         $book['thumbnail'] = $this->get_full_image_url($book['thumbnail']);
         $book['instructor'] = json_decode($book['instructor'], true);
         $book['instructor']['avatar'] = $this->get_full_image_url($book['instructor']['avatar']);
+        $book['demo_link'] = $this->get_full_image_url($book['demo_link']);
         $book['what_you_learn'] = json_decode($book['what_you_learn'], true);
         $book['requirements'] = isset($book['requirements']) ? json_decode($book['requirements'], true) : null;
 
@@ -199,27 +201,38 @@ class Books extends Products
                     bd.pages,
                     bd.size,
                     bd.format,
+                    CASE 
+                        WHEN oi.access_type = 'digital' AND oi.status = 'completed'
+                            THEN bd.digital_link 
+                        ELSE NULL 
+                    END AS digital_link,
                     p.level,
-                    o.status
+                    oi.status,
+                    o.uuid AS order_uuid,
+                    oi.access_type,
+                    oi.updated_at
                 FROM {$this->table['order_items']} oi
                 LEFT JOIN {$this->table['products']} p ON oi.product_id = p.id
                 LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
                 LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
                 LEFT JOIN {$this->table['orders']} o ON oi.order_id = o.id
+                LEFT JOIN {$this->table['transactions']} t ON o.id = t.order_id
                 LEFT JOIN {$this->table['book_details']} bd ON p.id = bd.product_id
-                    WHERE o.user_id = ? AND o.status = 'paid' AND p.type = 'book'
-                GROUP BY oi.id, p.id
+                WHERE o.user_id = ? AND p.type = 'book'
+                GROUP BY o.id
                 ORDER BY o.created_at DESC
         ";
+
         $user_books = $this->getData($sql, [$user['id']], true);
 
         if (!$user_books) {
-            Response::error('خطا در دریافت جزوات کاربر');
+            Response::success('جزوه ای یافت نشد', 'userBooks', []);
         }
 
         foreach ($user_books as &$user_book) {
             $user_book['instructor'] = json_decode($user_book['instructor']);
             $user_book['thumbnail'] = $this->get_full_image_url($user_book['thumbnail']);
+            $user_book['digital_link'] = $user_book['digital_link'] ? $this->get_full_image_url($user_book['digital_link']) : null;
         }
 
         Response::success('جزوات کاربر دریافت شد', 'userBooks', $user_books);

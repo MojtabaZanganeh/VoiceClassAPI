@@ -43,7 +43,7 @@ class Transactions extends Orders
         }
 
         $order = $this->getData(
-            "SELECT * FROM {$this->table['orders']} WHERE uuid = ? AND `status` = 'pending-pay'",
+            "SELECT * FROM {$this->table['orders']} WHERE uuid = ?",
             [$order_uuid]
         );
 
@@ -68,19 +68,6 @@ class Transactions extends Orders
 
         if (!$update_transaction) {
             Response::error('خطا در ثبت اطلاعات پرداخت');
-        }
-
-        $update_order = $this->updateData(
-            "UPDATE {$this->table['orders']} SET `status` = ?, updated_at = ? WHERE id = ?",
-            [
-                'need-approval',
-                $current_time,
-                $order['id']
-            ]
-        );
-
-        if (!$update_order) {
-            Response::error('خطا در تغییر وضعیت سفارش');
         }
 
         Response::success('اطلاعات پرداخت ثبت شد');
@@ -258,8 +245,11 @@ class Transactions extends Orders
 
         $new_status = $params['action'] === 'approve' ? 'paid' : 'rejected';
 
-        $update_transaction = $this->updateData(
-            "UPDATE {$this->table['transactions']} SET `status` = ? WHERE uuid = ?",
+        $db = new Database();
+        $db->beginTransaction();
+
+        $update_transaction = $db->updateData(
+            "UPDATE {$db->table['transactions']} SET `status` = ? WHERE uuid = ?",
             [
                 $new_status,
                 $params['transaction_id']
@@ -267,9 +257,53 @@ class Transactions extends Orders
         );
 
         if (!$update_transaction) {
-            Response::error('خطا در تغییر وضعیت تراکنش');
+            Response::error('خطا در تغییر وضعیت تراکنش', null, 400, $db);
         }
 
-        Response::success('وضعیت تراکنش به روز شد');
+        $order = $db->getData(
+            "SELECT order_id FROM {$db->table['transactions']} WHERE uuid = ?",
+            [
+                $params['transaction_id']
+            ]
+        );
+
+        if (!$order) {
+            Response::error('خطا در دریافت سفارش', null, 400, $db);
+        }
+
+        $items = $db->getData(
+            "SELECT id, access_type FROM {$db->table['order_items']} WHERE order_id = ?",
+            [$order['order_id']],
+            true
+        );
+
+        if (!$items) {
+            Response::error('هیچ آیتمی برای این سفارش پیدا نشد', null, 400, $db);
+        }
+
+        foreach ($items as $item) {
+            $item_status = 'rejected';
+
+            if ($new_status === 'paid') {
+                if ($item['access_type'] === 'printed') {
+                    $item_status = 'pending-review';
+                } else {
+                    $item_status = 'completed';
+                }
+            }
+
+            $update_item_status[] = $db->updateData(
+                "UPDATE {$db->table['order_items']} SET `status` = ? WHERE id = ?",
+                [$item_status, $item['id']]
+            );
+        }
+
+        if (in_array(false, $update_item_status)) {
+            Response::error('خطا در بروزرسانی وضعیت سفارش', null, 400, $db);
+        }
+
+        $db->commit();
+
+        Response::success('وضعیت سفارش به‌روزرسانی شد');
     }
 }

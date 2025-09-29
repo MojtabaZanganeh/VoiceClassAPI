@@ -22,8 +22,8 @@ class Profile extends Users
         $user = $this->check_role();
 
         $sql = "SELECT
-                    CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS full_name,
-                    u.phone,
+                    CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS receiver_name,
+                    u.phone AS receiver_phone,
                     ua.province,
                     ua.city,
                     ua.full_address,

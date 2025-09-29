@@ -26,15 +26,24 @@ class Chapters extends Products
         if (isset($params['student']) && $params['student'] === 'true') {
             $user = $this->check_role();
 
-            $user_order = $this->getData("SELECT id, order_id FROM {$this->table['course_students']} WHERE course_id = ? AND user_id = ?", [$product['id'], $user['id']]);
+            $user_order = $this->getData(
+                "SELECT 
+                        o.id AS order_id,
+                        oi.id AS order_item_id,
+                        oi.status
+                    FROM {$this->table['orders']} o
+                    JOIN {$this->table['order_items']} oi ON o.id = oi.order_id
+                        WHERE o.user_id = ? AND oi.product_id = ?
+                    LIMIT 1",
+                [$user['id'], $product['id']]
+            );
+
             if ($user_order) {
-                $order_details = $this->getData("SELECT id, `status` FROM {$this->table['orders']} WHERE id = ?", [$user_order['id']]);
-                if ($order_details) {
-                    if ($order_details['status'] === 'sending' || $order_details['status'] === 'completed') {
-                        $course_student = true;
-                    }
+                if ($user_order['status'] === 'completed') {
+                    $course_student = true;
                 }
             }
+            
             if ($course_student === false) {
                 Response::error('شما به این دوره دسترسی ندارید');
             }
@@ -71,9 +80,13 @@ class Chapters extends Products
         Response::success('سرفصل ها دریافت شد', 'productChapters', $chapters);
     }
 
-    public function add_chapters(array $chapters, int $product_id, $product_type = 'course' | 'book', Database $db)
+    public function add_chapters(array $chapters, int $product_id, string $product_type, Database $db)
     {
         $this->check_role(['instructor', 'admin']);
+
+        if (!in_array($product_type, ['course', 'book'])) {
+                Response::error('نوع محصول معتبر نیست', null, 400, $db);
+        }
 
         $total_length = 0;
         $total_count = 0;
@@ -98,7 +111,7 @@ class Chapters extends Products
             );
 
             if (!$chapter_id) {
-                Response::error('خطا در افزودن سرفصل');
+                Response::error('خطا در افزودن سرفصل', null, 400, $db);
             }
 
             foreach ($lessons_detail as $lesson) {
@@ -119,7 +132,7 @@ class Chapters extends Products
                 );
 
                 if (!$lesson_id) {
-                    Response::error('خطا در افزودن درس');
+                    Response::error('خطا در افزودن درس', null, 400, $db);
                 }
 
             }

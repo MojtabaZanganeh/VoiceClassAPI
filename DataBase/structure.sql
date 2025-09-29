@@ -203,14 +203,6 @@ CREATE TABLE
         uuid VARCHAR(36) NOT NULL,
         user_id INT UNSIGNED NOT NULL,
         code VARCHAR(10) NOT NULL,
-        status ENUM (
-            'pending-pay',
-            'need-approval',
-            'sending',
-            'completed',
-            'rejected',
-            'canceled'
-        ) DEFAULT 'pending-pay' NOT NULL,
         discount_code_id INT UNSIGNED,
         discount_amount INT UNSIGNED DEFAULT 0 NOT NULL,
         total_amount BIGINT UNSIGNED NOT NULL,
@@ -227,9 +219,18 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         order_id INT UNSIGNED NOT NULL,
         product_id INT UNSIGNED NOT NULL,
+        status ENUM (
+            'pending-pay',
+            'need-approval',
+            'sending',
+            'completed',
+            'rejected',
+            'canceled'
+        ) DEFAULT 'pending-pay' NOT NULL,
         access_type ENUM ('online', 'recorded', 'printed', 'digital') NOT NULL,
         quantity INT UNSIGNED DEFAULT 1 NOT NULL,
         price BIGINT UNSIGNED NOT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (order_id) REFERENCES orders (id),
         FOREIGN KEY (product_id) REFERENCES products (id)
     ) ENGINE = InnoDB;
@@ -239,12 +240,13 @@ CREATE TABLE
     order_addresses (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         order_id INT UNSIGNED NOT NULL,
-        receiver_name VARCHAR(50) NOT NULL,
-        receiver_phone VARCHAR(12) NOT NULL,
         province VARCHAR(50) NOT NULL,
         city VARCHAR(50) NOT NULL,
         postal_code VARCHAR(10) NOT NULL,
         full_address TEXT NOT NULL,
+        receiver_name VARCHAR(50) NOT NULL,
+        receiver_phone VARCHAR(12) NOT NULL,
+        notes TEXT,
         FOREIGN KEY (order_id) REFERENCES orders (id)
     ) ENGINE = InnoDB;
 

@@ -241,6 +241,23 @@ trait Sanitizer
                     }
                     break;
 
+                case 'province_city':
+                    $provinces = json_decode(file_get_contents('Data/provinces.json'), true);
+                    $cities = json_decode(file_get_contents('Data/cities.json'), true);
+
+                    $provinceList = array_filter($provinces, fn($p) => $p['name'] === $value['province']);
+                    if (!empty($provinceList)) {
+                        $province = array_values($provinceList)[0];
+                        $provinceId = $province['id'];
+
+                        $cityList = array_filter($cities, fn($c) => $c['name'] === $value['city'] && $c['province_id'] === $provinceId);
+                        if (!empty($cityList)) {
+                            $city = array_values($cityList)[0];
+                            return [$province['name'], $city['name']];
+                        }
+                    }
+                    break;
+
                 default:
                     break;
             }
@@ -249,15 +266,22 @@ trait Sanitizer
         Response::error("مقدار وارد شده برای $value_name معتبر نیست");
     }
 
-    public static function check_input_length($value, $value_name, $min, $max)
+    public static function check_input_length($value, $value_name, $min = null, $max = null)
     {
         $value_length = mb_strlen($value, 'UTF-8');
 
-        if ($value_length >= $min && $value_length <= $max) {
+        if ($value_length >= ($min ?: 0) && $value_length <= ($max ?: 4096)) {
             return $value;
         }
 
-        Response::error("طول $value_name باید بین $min و $max کاراکتر باشد");
+        Response::error(sprintf(
+            "طول $value_name باید %s کاراکتر باشد",
+            $min && $max
+            ? "باید بین $min و $max"
+            : ($min && !$max
+                ? "باید حداقل $min"
+                : "حداکثر $max")
+        ));
     }
 
 }

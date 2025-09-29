@@ -190,29 +190,31 @@ class Courses extends Products
                     JSON_OBJECT(
                     'name', CONCAT(up.first_name_fa, ' ', up.last_name_fa)
                     ) AS instructor,
+                    oi.access_type,
                     cd.duration,
-                    p.level,
-                    cs.progress AS user_progress
-                FROM {$this->table['course_students']} cs
-                LEFT JOIN {$this->table['products']} p ON cs.course_id = p.id
+                    oi.status,
+                    p.level
+                FROM {$this->table['orders']} o
+                LEFT JOIN {$this->table['order_items']} oi ON o.id = oi.order_id
+                LEFT JOIN {$this->table['products']} p ON oi.product_id = p.id
                 LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
-                LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
                 LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
-                    WHERE cs.user_id = ?
-                GROUP BY cs.id, p.id
-                ORDER BY cs.enrolled_at DESC
+                LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
+                    WHERE o.user_id = ? AND p.type = 'course'
+                GROUP BY o.id, oi.id
+                ORDER BY oi.updated_at DESC
         ";
         $user_courses = $this->getData($sql, [$user['id']], true);
 
         if (!$user_courses) {
-            Response::error('خطا در دریافت دوره های کاربر');
+            Response::success('دوره ای یافت نشد', 'userCourses', []);
         }
 
         foreach ($user_courses as &$user_course) {
             $user_course['instructor'] = json_decode($user_course['instructor']);
             $user_course['thumbnail'] = $this->get_full_image_url($user_course['thumbnail']);
         }
-
+Error::log('uc', $user_courses);
         Response::success('دوره های کاربر دریافت شد', 'userCourses', $user_courses);
     }
 }
