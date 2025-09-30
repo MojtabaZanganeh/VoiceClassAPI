@@ -5,6 +5,7 @@ use Classes\Base\Base;
 use Classes\Base\Error;
 use Classes\Base\Response;
 use Classes\Base\Sanitizer;
+use Classes\Products\Categories;
 use Classes\Users\Users;
 
 class Instructors extends Users
@@ -15,19 +16,7 @@ class Instructors extends Users
     {
         $columns = isset($params['select']) && $params['select'] === 'true' 
         ? 'i.id, i.professional_title, i.professional_title, ' 
-        : "i.*, 
-                (
-                    SELECT CONCAT(
-                        '[', 
-                        GROUP_CONCAT(
-                            JSON_QUOTE(c.name)
-                            SEPARATOR ','
-                        ), 
-                        ']'
-                    )
-                    FROM {$this->table['categories']} c
-                    WHERE JSON_CONTAINS(i.categories_id, CAST(c.id AS JSON), '$')
-                ) AS categories, ";
+        : "i.*, ";
         $sql = "SELECT
                     $columns
                     u.avatar,
@@ -42,12 +31,14 @@ class Instructors extends Users
         if (!$all_instructors) {
             Response::error('خطا در دریافت مدرسین');
         }
-
+        
+        $category_obj = new Categories();
+        
         foreach ($all_instructors as &$instructor) {
             $instructor['avatar'] = $this->get_full_image_url($instructor['avatar']);
-            $instructor['categories'] = isset($instructor['categories']) ? json_decode($instructor['categories']) : null;
+            $instructor['categories'] =  $category_obj->get_categories_by_id(json_decode($instructor['categories_id'], true));
         }
-
+        
         Response::success('مدرسین دریافت شدند', 'allInstructors', $all_instructors);
     }
 }
