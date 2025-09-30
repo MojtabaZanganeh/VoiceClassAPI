@@ -207,8 +207,9 @@ class Books extends Products
                         ELSE NULL 
                     END AS digital_link,
                     p.level,
-                    oi.status,
                     o.uuid AS order_uuid,
+                    oi.uuid AS item_uuid,
+                    oi.status,
                     oi.access_type,
                     oi.updated_at
                 FROM {$this->table['order_items']} oi

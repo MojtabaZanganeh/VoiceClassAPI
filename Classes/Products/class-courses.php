@@ -193,6 +193,7 @@ class Courses extends Products
                     ) AS instructor,
                     cd.duration,
                     o.uuid AS order_uuid,
+                    oi.uuid AS item_uuid,
                     oi.access_type,
                     oi.status,
                     oi.updated_at
