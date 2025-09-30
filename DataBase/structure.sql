@@ -411,13 +411,14 @@ CREATE TABLE
 CREATE TABLE
     join_us_requests (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) NOT NULL,
         name VARCHAR(50) NOT NULL,
         phone VARCHAR(12) NOT NULL,
         email VARCHAR(255) NOT NULL,
         resume TEXT NOT NULL,
         demo_course_link TEXT NOT NULL,
         demo_book_link TEXT,
-        status ENUM ('pending', 'interview', 'rejected', 'approved') NOT NULL DEFAULT 'pending',
+        status ENUM ('pending', 'interview', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE = InnoDB;

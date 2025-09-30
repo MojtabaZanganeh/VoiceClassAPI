@@ -20,6 +20,8 @@ class Support extends Users
         $demo_course_link = $this->check_input($params['sample_video'], 'url', 'لینک نمونه ویدیو تدریس');
         $demo_book_link = $params['sample_document'] ? $this->check_input($params['sample_document'], 'url', 'لینک نمونه جزوه') : null;
 
+        $uuid = $this->generate_uuid();
+
         $current_time = $this->current_time();
 
         $exists = $this->getData(
@@ -33,9 +35,10 @@ class Support extends Users
 
         $add_request = $this->insertData(
             "INSERT INTO {$this->table['join_us_requests']}
-                    (`name`, `phone`, `email`, `resume`, `demo_course_link`, `demo_book_link`, `status`, `created_at`, `updated_at`)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (`uuid`, `name`, `phone`, `email`, `resume`, `demo_course_link`, `demo_book_link`, `status`, `created_at`, `updated_at`)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
+                $uuid,
                 $full_name,
                 $phone,
                 $email,
@@ -53,5 +56,94 @@ class Support extends Users
         }
 
         Response::success('درخواست همکاری ثبت شد');
+    }
+
+    public function get_all_join_us_requests($params)
+    {
+        $admin = $this->check_role(['admin']);
+
+        $statsSql = "SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'interview' THEN 1 ELSE 0 END) as interview,
+                        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+                        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+                    FROM {$this->table['join_us_requests']}
+        ";
+
+        $stats = $this->getData($statsSql, []);
+
+        $where_condition = '';
+        $bind_params = [];
+
+        if (!empty($params['status']) && in_array($params['status'], ['pending', 'interview', 'approved', 'rejected'])) {
+            $where_condition .= ' WHERE status = ? ';
+            $bind_params[] = $params['status'];
+        }
+
+        if (!empty($params['q'])) {
+            $query = $params['q'];
+            $condition = 'phone LIKE ? OR name LIKE ? OR UPPER(email) LIKE UPPER(?) OR UPPER(resume) LIKE UPPER(?)';
+            if ($where_condition === '') {
+                $where_condition .= " WHERE $condition";
+            } else {
+                $where_condition .= " AND $condition";
+            }
+            $bind_params[] = "%$query%";
+            $bind_params[] = "%$query%";
+            $bind_params[] = "%$query%";
+            $bind_params[] = "%$query%";
+        }
+
+        $current_page = isset($params['current_page']) ? max(((int) $params['current_page'] - 1), 0) : 0;
+        $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 20)
+            ? (int) $params['per_page_count']
+            : 20;
+
+        $offset = $current_page * $per_page_count;
+
+        $bind_params_ids = array_merge($bind_params, [$per_page_count, $offset]);
+
+        $requests = $this->getData(
+            "SELECT * FROM {$this->table['join_us_requests']} 
+                    $where_condition
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?",
+            $bind_params_ids,
+            true
+        );
+
+        if (!$requests) {
+            Response::success('درخواستی یافت نشد', 'requestsData', [
+                'requests' => [],
+                'stats' => $stats
+            ]);
+        }
+
+        Response::success('درخواستی یافت نشد', 'requestsData', [
+            'requests' => $requests,
+            'stats' => $stats
+        ]);
+    }
+
+    public function update_join_us_request_status($params)
+    {
+        $admin = $this->check_role(['admin']);
+
+        $this->check_params($params, ['request_uuid', 'status']);
+
+        $update_transaction = $this->updateData(
+            "UPDATE {$this->table['join_us_requests']} SET `status` = ? WHERE uuid = ?",
+            [
+                $params['status'],
+                $params['request_uuid']
+            ]
+        );
+
+        if (!$update_transaction) {
+            Response::error('خطا در تغییر وضعیت درخواست همکاری');
+        }
+
+        Response::success('وضعیت درخواست همکاری به روز شد');
     }
 }

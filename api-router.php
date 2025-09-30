@@ -60,4 +60,6 @@ $router->add('/notifications/get-user-notifications', 'GET', 'Classes\Notificati
 $router->add('/notifications/read-notification', 'POST', 'Classes\Notifications\Notifications', 'read_notification');
 
 $router->add('/support/join-us-request', 'POST', 'Classes\Support\Support', 'join_us_request');
+$router->add('/support/get-all-join-us-requests', 'GET', 'Classes\Support\Support', 'get_all_join_us_requests');
+$router->add('/support/update-join-us-request-status', 'POST', 'Classes\Support\Support', 'update_join_us_request_status');
 $router->add('/support/get-user-tickets', 'GET', 'Classes\Support\Tickets', 'get_user_tickets');
