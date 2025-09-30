@@ -43,7 +43,7 @@ class Chapters extends Products
                     $course_student = true;
                 }
             }
-            
+
             if ($course_student === false) {
                 Response::error('شما به این دوره دسترسی ندارید');
             }
@@ -85,7 +85,7 @@ class Chapters extends Products
         $this->check_role(['instructor', 'admin']);
 
         if (!in_array($product_type, ['course', 'book'])) {
-                Response::error('نوع محصول معتبر نیست', null, 400, $db);
+            Response::error('نوع محصول معتبر نیست', null, 400, $db);
         }
 
         $total_length = 0;
@@ -118,7 +118,7 @@ class Chapters extends Products
                 $lesson_title = $this->check_input($lesson['title'], null, 'عنوان درس', '/^.{3,50}$/us');
                 $lesson_length = $this->check_input($lesson['length'], 'positive_int', 'طول درس');
                 $lesson_free = $this->check_input($lesson['free'], 'boolean', 'درس رایگان');
-                $lesson_link = $product_type === 'course' ? $this->check_input($lesson['link'], null, 'لینک درس', '/^https:\/\/drive\.google\.com\/file\/d\//') : null;
+                $lesson_link = $product_type === 'course' ? $this->convert_link_to_preview_embed($lesson['link']) : null;
 
                 $lesson_id = $db->insertData(
                     "INSERT INTO {$db->table['chapter_lessons']} (`chapter_id`, `title`, `length`, `free`, `link`) VALUES (?, ?, ?, ?, ?)",

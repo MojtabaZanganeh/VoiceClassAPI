@@ -320,6 +320,51 @@ trait Base
         return $_ENV['API_URL'] . $relative_path;
     }
 
+    public function convert_link_to_preview_embed(string $url): string
+    {
+        try {
+            if (
+                !preg_match('/^https:\/\/drive\.google\.com\/file\/d\//', $url) &&
+                !preg_match('/^https:\/\/(?:www\.)?aparat\.com\/v\/[A-Za-z0-9_-]+/', $url)
+            ) {
+                Response::error('لینک ویدیو باید از گوگل درایو یا آپارات باشد');
+            }
+
+            $u = parse_url($url);
+            if (!isset($u['host'])) {
+                return $url;
+            }
+
+            $host = strtolower(preg_replace('/^www\./', '', $u['host']));
+            $path = $u['path'] ?? '';
+
+            if (str_contains($host, 'google.com') && str_contains($host, 'drive')) {
+                if (preg_match('/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/', $url, $m)) {
+                    $fileId = $m[1];
+                    return "https://drive.google.com/file/d/{$fileId}/preview";
+                }
+                return $url;
+            }
+
+            if ($host === 'aparat.com') {
+                if (preg_match('#^/video/video/embed/videohash/[A-Za-z0-9_-]+/vt/frame$#', $path)) {
+                    return $url;
+                }
+
+                if (preg_match('#^/v/([A-Za-z0-9_-]+)#', $path, $m)) {
+                    $hash = $m[1];
+                    return "https://www.aparat.com/video/video/embed/videohash/{$hash}/vt/frame";
+                }
+
+                return $url;
+            }
+
+            return $url;
+        } catch (\Exception $e) {
+            return $url;
+        }
+    }
+
     public function generate_qr_code($file_name, $data)
     {
         try {
