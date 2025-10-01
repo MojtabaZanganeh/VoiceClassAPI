@@ -151,7 +151,7 @@ trait Base
      * @param bool $send_sms Flag to determine whether the SMS should be sent.
      * @return string The result of the SMS sending process.
      */
-    public static function send_sms($phone_number, array $params, $pattern, $send_sms = true)
+    public static function send_sms($phone_number, $code, $pattern, $send_sms = true)
     {
 
         if (!$send_sms) {
@@ -172,45 +172,42 @@ trait Base
 
         // $send_result = ($send_sms) ? $sms->SendByBaseNumber($data)->SendByBaseNumberResult : '65461456145146531456';
 
-        $baseUrl = $_ENV['SEND_SMS_URL'];
-        $token = $_ENV['SEND_SMS_TOKEN'];
-
-        $endpoint = $baseUrl . '/sms/pattern/normal/send';
-
-        $data = [
-            "code" => "cbirmhgqcaza5qa",
-            "sender" => "+983000505",
-            "recipient" => "+98" . substr($phone_number, 1),
-            "variable" => $params
+        $payload = [
+            "mobile" => $phone_number,
+            "templateId" => (int) $_ENV["SEND_SMS_TEMPLATE_ID"],
+            "parameters" => [
+                [
+                    "name" => "code",
+                    "value" => $code
+                ]
+            ]
         ];
 
-        $jsonData = json_encode($data, JSON_UNESCAPED_UNICODE);
-
-        $ch = curl_init();
-
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $endpoint,
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => 'https://api.sms.ir/v1/send/verify',
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $jsonData,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'apikey: ' . $token
-            ],
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: text/plain', 'x-api-key: ' . $_ENV['SEND_SMS_API_KEY']],
         ]);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $response = curl_exec($curl);
+        curl_close($curl);
 
-        curl_close($ch);
-
-        if ($httpCode === 200) {
-            $sent_data = json_decode($response, true);
-            $message_id = $sent_data['data']['message_id'];
-            return $message_id;
+        if ($response === false) {
+            Error::log("sms-$phone_number", [curl_error($curl), curl_errno($curl)]);
+            return false;
         }
 
-        return false;
+        $result = json_decode($response, true);
+
+        return $result['status'] === 1 ? true : false;
     }
 
     /**

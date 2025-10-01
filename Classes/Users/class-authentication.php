@@ -40,7 +40,7 @@ class Authentication extends Database
 
         $phone = $this->check_input($params['phone'], 'phone', 'شماره همراه');
         $page = $params['page'] ?? 'Login';
-        $send_sms = (isset($params['send'])) ? $params['send'] : true;
+        $send_sms = true;
 
         $sql = "SELECT * FROM {$this->table['otps']} WHERE `phone` = ? AND `is_used` = '0' AND `page` = ? ORDER BY expires_at DESC LIMIT 1";
         $execute = [$phone, $page];
@@ -93,7 +93,7 @@ class Authentication extends Database
         $result = $this->insertData($sql, $execute);
 
         if ($result) {
-            $send_result = $this->send_sms($phone, ["verification-code" => $rand_code], $sms_pattern, $send_sms);
+            $send_result = $this->send_sms($phone, $rand_code, $sms_pattern, $send_sms);
             if ($send_result && strlen($send_result) >= 10) {
                 $this->commit();
                 Response::success('کد تایید ارسال شد');
