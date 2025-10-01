@@ -94,7 +94,7 @@ class Authentication extends Database
 
         if ($result) {
             $send_result = $this->send_sms($phone, $rand_code, $sms_pattern, $send_sms);
-            if ($send_result && strlen($send_result) >= 10) {
+            if ($send_result === true) {
                 $this->commit();
                 Response::success('کد تایید ارسال شد');
             } else {
