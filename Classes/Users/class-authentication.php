@@ -40,7 +40,7 @@ class Authentication extends Database
 
         $phone = $this->check_input($params['phone'], 'phone', 'شماره همراه');
         $page = $params['page'] ?? 'Login';
-        $send_sms = true;
+        $send_sms = $_ENV['SEND_SMS'] === 'true';
 
         $sql = "SELECT * FROM {$this->table['otps']} WHERE `phone` = ? AND `is_used` = '0' AND `page` = ? ORDER BY expires_at DESC LIMIT 1";
         $execute = [$phone, $page];

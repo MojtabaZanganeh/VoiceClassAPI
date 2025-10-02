@@ -155,8 +155,7 @@ trait Base
     {
 
         if (!$send_sms) {
-            $send_result = '65461456145146531456';
-            return $send_result;
+            return true;
         }
 
         // Meli Payamak
@@ -287,6 +286,10 @@ trait Base
 
     public function get_user_ip()
     {
+        if (isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
+            return $_SERVER["HTTP_CF_CONNECTING_IP"];
+        }
+
         $ip_sources = [
             'HTTP_CLIENT_IP',
             'HTTP_X_FORWARDED_FOR',
