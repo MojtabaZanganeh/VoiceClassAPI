@@ -14,9 +14,9 @@ class Instructors extends Users
 
     public function get_instructors($params)
     {
-        $columns = isset($params['select']) && $params['select'] === 'true' 
-        ? 'i.id, i.professional_title, i.professional_title, ' 
-        : "i.*, ";
+        $columns = isset($params['select']) && $params['select'] === 'true'
+            ? 'i.id, i.professional_title, i.professional_title, '
+            : "i.*, ";
         $sql = "SELECT
                     $columns
                     u.avatar,
@@ -31,14 +31,14 @@ class Instructors extends Users
         if (!$all_instructors) {
             Response::error('خطا در دریافت مدرسین');
         }
-        
+
         $category_obj = new Categories();
-        
+
         foreach ($all_instructors as &$instructor) {
             $instructor['avatar'] = $this->get_full_image_url($instructor['avatar']);
-            $instructor['categories'] =  $category_obj->get_categories_by_id(json_decode($instructor['categories_id'], true));
+            $instructor['categories'] = !empty($instructor['categories_id']) ? $category_obj->get_categories_by_id(json_decode($instructor['categories_id'], true)) : '';
         }
-        
+
         Response::success('مدرسین دریافت شدند', 'allInstructors', $all_instructors);
     }
 }

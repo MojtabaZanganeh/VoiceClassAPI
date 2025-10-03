@@ -26,6 +26,7 @@ $router->add('/instructors/get-all', 'GET', 'Classes\Instructors\Instructors', '
 
 $router->add('/products/add-new', 'POST', 'Classes\Products\Products', 'add_new_product');
 $router->add('/products/upload-product-file', 'POST', 'Classes\Products\Products', 'upload_product_file');
+$router->add('/products/get-similar-products', 'GET', 'Classes\Products\Products', 'get_similar_products');
 
 $router->add('/chapters/get-product-chapters', 'GET', 'Classes\Products\Chapters', 'get_product_chapters');
 

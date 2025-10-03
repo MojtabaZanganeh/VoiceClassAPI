@@ -125,6 +125,7 @@ class Courses extends Products
 
         $sql = "SELECT
                     p.uuid,
+                    p.category_id,
                     pc.name AS category,
                     p.thumbnail,
                     p.title,
@@ -217,7 +218,7 @@ class Courses extends Products
             $user_course['instructor'] = json_decode($user_course['instructor']);
             $user_course['thumbnail'] = $this->get_full_image_url($user_course['thumbnail']);
         }
-Error::log('uc', $user_courses);
+        
         Response::success('دوره های کاربر دریافت شد', 'userCourses', $user_courses);
     }
 }

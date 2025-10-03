@@ -2,6 +2,7 @@
 namespace Classes\Products;
 
 use Classes\Base\Base;
+use Classes\Base\Error;
 use Classes\Base\Response;
 use Classes\Base\Sanitizer;
 
@@ -35,7 +36,7 @@ class Books extends Products
 
         if ($format && in_array(strtoupper($format), ['PDF', 'EPUB'])) {
             $where_condition .= " AND bd.format = ?";
-            $bindParams[] = $category;
+            $bindParams[] = $format;
         }
 
         if ($level && in_array($level, ['beginner', 'intermediate', 'advanced', 'expert'])) {
@@ -43,7 +44,7 @@ class Books extends Products
             $bindParams[] = $level;
         }
 
-        if ($access_type && in_array($access_type, ['online', 'recorded'])) {
+        if ($access_type && in_array($access_type, ['printed', 'digital'])) {
             $where_condition .= " AND bd.access_type = ?";
             $bindParams[] = $access_type;
         }
@@ -131,6 +132,7 @@ class Books extends Products
         $sql = "SELECT
                     p.id,
                     p.uuid,
+                    p.category_id,
                     pc.name AS category,
                     p.thumbnail,
                     p.title,

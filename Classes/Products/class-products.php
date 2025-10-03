@@ -252,4 +252,51 @@ class Products extends Users
 
         return $target;
     }
+
+    public function get_similar_products($params)
+    {
+        $this->check_params($params, ['product_uuid', 'product_type']);
+
+        $product_uuid = $params['product_uuid'];
+        $product_type = $params['product_type'];
+
+        $sql = "SELECT
+                    p2.slug,
+                    p2.title,
+                    p2.thumbnail,
+                    JSON_OBJECT(
+                        'name', CONCAT(up2.first_name_fa, ' ', up2.last_name_fa)
+                    ) AS instructor,
+                    p2.price,
+                    p2.discount_amount
+                FROM {$this->table['products']} p1
+                INNER JOIN {$this->table['products']} p2 
+                    ON p1.category_id = p2.category_id
+                INNER JOIN {$this->table['user_profiles']} up2 
+                    ON p2.instructor_id = up2.user_id
+                WHERE p1.uuid = ? 
+                AND p2.uuid != ? 
+                AND p2.type = ?
+                GROUP BY p2.id
+                ORDER BY 
+                    (p1.instructor_id = p2.instructor_id) DESC,
+                    p2.created_at DESC
+                LIMIT 3;
+        ";
+
+        $similar_products = $this->getData($sql, [$product_uuid, $product_uuid, $product_type], true);
+
+        if (!$similar_products) {
+            Response::success('محصول مشابهی یافت نشد', 'similarProducts', []);
+        }
+
+        foreach ($similar_products as &$similar_product) {
+            $similar_product['instructor'] = json_decode($similar_product['instructor']);
+            $similar_product['thumbnail'] = $this->get_full_image_url($similar_product['thumbnail']);
+        }
+
+        Response::success('محصولات مشابه دریافت شد', 'similarProducts', $similar_products);
+    }
+
+
 }

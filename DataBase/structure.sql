@@ -82,7 +82,7 @@ CREATE TABLE
 CREATE TABLE
     products (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        uuid VARCHAR(36) NOT NULL,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
         status ENUM (
             'not-completed',
             'need-approval',
@@ -204,7 +204,7 @@ CREATE TABLE
 CREATE TABLE
     orders (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        uuid VARCHAR(36) NOT NULL,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
         user_id INT UNSIGNED NOT NULL,
         code VARCHAR(10) NOT NULL,
         discount_code_id INT UNSIGNED,
@@ -220,6 +220,7 @@ CREATE TABLE
 CREATE TABLE
     order_items (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
         order_id INT UNSIGNED NOT NULL,
         product_id INT UNSIGNED NOT NULL,
         status ENUM (
@@ -257,7 +258,7 @@ CREATE TABLE
 CREATE TABLE
     transactions (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        uuid VARCHAR(36) NOT NULL,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
         order_id INT UNSIGNED NOT NULL,
         type ENUM ('online', 'card') NOT NULL,
         amount BIGINT UNSIGNED NOT NULL,
@@ -411,7 +412,7 @@ CREATE TABLE
 CREATE TABLE
     join_us_requests (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        uuid VARCHAR(36) NOT NULL,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
         name VARCHAR(50) NOT NULL,
         phone VARCHAR(12) NOT NULL,
         email VARCHAR(255) NOT NULL,
