@@ -41,6 +41,7 @@ class Products extends Users
 
             $instructor_id = $instructor_data['id'];
             $creator_id = $instructor['id'];
+            $product_status = 'verified';
         }
 
         $this->check_params(
@@ -102,11 +103,6 @@ class Products extends Users
             }
         }
 
-        if ($type === 'book') {
-            $pages = $this->check_input($params['pages'], 'positive_int', 'تعداد صفحات');
-            $size = $this->check_input($params['size'], 'positive_int', 'حجم فایل');
-        }
-
         $uuid = $this->generate_uuid();
 
         $random_sku = $this->get_random('int', 4, $this->table['products'], 'slug');
@@ -124,6 +120,8 @@ class Products extends Users
         $demo_book = $type === 'book' ? $this->check_input($params['demo_link'], null, 'فایل دمو جزوه', '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/i') : null;
         $full_book = $type === 'book' && $access_type === 'digital' ? $this->check_input($params['digital_link'], null, 'فایل جزوه', '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/i') : null;
 
+        $product_status ??= 'need-approval';
+
         $db = new Database();
         $db->beginTransaction();
 
@@ -133,7 +131,7 @@ class Products extends Users
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 $uuid,
-                'need-approval',
+                $product_status,
                 $slug,
                 $category_id,
                 $instructor_id,
@@ -168,13 +166,19 @@ class Products extends Users
                 [$product_id, $access_type, $chapter_data['lessons_count'], $chapter_data['total_length'], $access_type_price, $access_type_discount_amount]
             );
         } else {
-            $format = strtoupper($params['format']);
-            $full_book_format = strtoupper(explode('.', $full_book)[1]);
-
             $demo_book_url = $book_path . $demo_book;
             $full_book_url = $book_path . $full_book;
 
-            if (!in_array($format, ['PDF', 'POWERPOINT', 'EPUB']) || ($full_book !== null && $format !== $full_book_format)) {
+             if ($type === 'book') {
+                $full_book_temp = $temp_path . $full_book;
+                $pdf = new \Imagick();
+                $pdf->pingImage($full_book_temp);
+                $pages = $pdf->getNumberImages();
+                $size = round(filesize($full_book_temp) / 1024 / 1024, 2);
+                $format = pathinfo($full_book_temp, FILEINFO_EXTENSION);
+            }
+
+            if (!in_array($format, ['PDF', 'POWERPOINT', 'EPUB']) || ($full_book !== null)) {
                 Response::error('فرمت جزوه معتبر نیست', null, 400, $db);
             }
 
