@@ -128,18 +128,72 @@ trait Base
         }
 
         $uuid ??= $this->generate_uuid();
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $file_name = sprintf('%s%s.%s', $uuid, $time ? "-$time" : '', $ext);
+        $file_target = $upload_dir . $file_name;
 
-        do {
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $file_name = sprintf('%s%s.%s', $uuid, $time ? "-$time" : '', $ext);
-            $file_target = $upload_dir . $file_name;
-        } while (file_exists($file_target));
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
 
         if (move_uploaded_file($file['tmp_name'], $file_target)) {
             return $file_target;
         }
 
         return null;
+    }
+
+    private function handle_chunked_upload($file, $upload_dir, $fileId, $chunkIndex, $totalChunks, $fileName, $uuid = null, $time = null)
+    {
+        if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $uuid ??= $this->generate_uuid();
+
+        $tempDir = $upload_dir . "{$fileId}/";
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        $ext = pathinfo($fileName, PATHINFO_EXTENSION);
+        $chunkPath = $tempDir . "{$fileId}.part{$chunkIndex}";
+
+        if (!move_uploaded_file($file['tmp_name'], $chunkPath)) {
+            return null;
+        }
+
+        if ((int) $chunkIndex + 1 === (int) $totalChunks) {
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+
+            $finalName = sprintf('%s%s.%s', $uuid, $time ? "-$time" : '', $ext);
+            $finalPath = $upload_dir . $finalName;
+
+            if (!$out = fopen($finalPath, "wb")) {
+                return null;
+            }
+
+            for ($i = 0; $i < $totalChunks; $i++) {
+                $chunkFile = $tempDir . "{$fileId}.part{$i}";
+                if (!file_exists($chunkFile)) {
+                    fclose($out);
+                    return null;
+                }
+                $in = fopen($chunkFile, "rb");
+                stream_copy_to_stream($in, $out);
+                fclose($in);
+            }
+            fclose($out);
+
+            array_map("unlink", glob($tempDir . "*"));
+            rmdir($tempDir);
+
+            return $finalPath;
+        }
+
+        return "partial";
     }
 
     /**

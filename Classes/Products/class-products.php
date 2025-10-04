@@ -79,9 +79,18 @@ class Products extends Users
 
         $what_you_learn = $this->check_input($params['what_you_learn'], 'array', 'نکات یادگیری');
 
-        $requirements = !empty($params['requirements']) ? $this->check_input($params['requirements'], 'array', 'پیش نیازها') : null;
+        $requirements = [];
+        if (!empty($params['requirements'])) {
+            $cleaned = array_filter($params['requirements'], function ($val) {
+                return trim($val) !== '';
+            });
 
-        $price = $this->check_input($params['price'], 'positive_int', 'قیمت اصلی');
+            if (!empty($cleaned)) {
+                $requirements = $this->check_input($cleaned, 'array', 'پیش نیازها');
+            }
+        }
+
+        $price = $this->check_input($params['price'], 'int', 'قیمت اصلی');
         $discount_amount = $this->check_input($params['discount_amount'], 'int', 'مقدار تخفیف');
         if ($discount_amount > $price) {
             Response::error('مقدار تخفیف نمی تواند از قیمت اصلی بیشتر باشد');
@@ -90,13 +99,13 @@ class Products extends Users
         $access_type_price = 0;
         $access_type_discount_amount = 0;
         if (isset($params['online_price']) && $params['online_price']) {
-            $access_type_price = $this->check_input($params['online_price'], 'positive_int', 'قیمت دوره آنلاین');
+            $access_type_price = $this->check_input($params['online_price'], 'int', 'قیمت دوره آنلاین');
             $access_type_discount_amount = $this->check_input($params['online_discount_amount'], 'int', 'مقدار تخفیف دوره آنلاین');
             if ($access_type_discount_amount > $access_type_price) {
                 Response::error('مقدار تخفیف نمی تواند از قیمت اصلی دوره آنلاین بیشتر باشد');
             }
         } elseif (isset($params['printed_price']) && $params['printed_price']) {
-            $access_type_price = $this->check_input($params['printed_price'], 'positive_int', 'قیمت جزوه چاپی');
+            $access_type_price = $this->check_input($params['printed_price'], 'int', 'قیمت جزوه چاپی');
             $access_type_discount_amount = $this->check_input($params['printed_discount_amount'], 'int', 'مقدار تخفیف جزوه چاپی');
             if ($access_type_discount_amount > $access_type_price) {
                 Response::error('مقدار تخفیف نمی تواند از قیمت اصلی جزوه چاپی بیشتر باشد');
@@ -169,17 +178,22 @@ class Products extends Users
             $demo_book_url = $book_path . $demo_book;
             $full_book_url = $book_path . $full_book;
 
-             if ($type === 'book') {
-                $full_book_temp = $temp_path . $full_book;
+            if ($type === 'book') {
+                $full_book_uuid = explode('.', $full_book)[0];
+                $full_book_files = glob("{$temp_path}{$full_book_uuid}-*.*");
                 $pdf = new \Imagick();
+                if (!$full_book_files || count($full_book_files) === 0) {
+                    Response::error('فایل کامل جزوه بارگذاری نشده است');
+                }
+                $full_book_temp = $full_book_files[0];
                 $pdf->pingImage($full_book_temp);
                 $pages = $pdf->getNumberImages();
                 $size = round(filesize($full_book_temp) / 1024 / 1024, 2);
-                $format = pathinfo($full_book_temp, FILEINFO_EXTENSION);
+                $format = strtoupper(pathinfo($full_book, PATHINFO_EXTENSION));
             }
 
-            if (!in_array($format, ['PDF', 'POWERPOINT', 'EPUB']) || ($full_book !== null)) {
-                Response::error('فرمت جزوه معتبر نیست', null, 400, $db);
+            if (!in_array($format, ['PDF', 'POWERPOINT', 'EPUB'])) {
+                Response::error('فرمت جزوه معتبر نیست', [], 400, $db);
             }
 
             $product_details = $db->insertData(
@@ -227,16 +241,51 @@ class Products extends Users
     {
         $instructor = $this->check_role(['instructor', 'admin']);
 
+        $fileId = $_POST['fileId'] ?? null;
+        $chunkIndex = isset($_POST['chunkIndex']) ? intval($_POST['chunkIndex']) : null;
+        $totalChunks = isset($_POST['totalChunks']) ? intval($_POST['totalChunks']) : null;
+        $fileName = $_POST['fileName'] ?? null;
+
         $upload_dir = 'Uploads/Temp/';
         $uuid = $this->generate_uuid();
         $time = time();
-        $thumbnail_url = (isset($_FILES['product_file']) && $_FILES['product_file']['size'] > 0) ? $this->handle_file_upload($_FILES['product_file'], $upload_dir, $uuid, $time) : null;
 
-        if (!$thumbnail_url) {
+        if ($fileId && $chunkIndex !== null && $totalChunks && $fileName && isset($_FILES['chunk'])) {
+            $result = $this->handle_chunked_upload(
+                $_FILES['chunk'],
+                $upload_dir,
+                $fileId,
+                $chunkIndex,
+                $totalChunks,
+                $fileName,
+                $uuid,
+                $time
+            );
+
+            if ($result === null) {
+                Response::error("خطا در ذخیره بخش یا فایل نهایی");
+            }
+
+            if ($result === "partial") {
+                Response::success("بخش شماره {$chunkIndex} ذخیره شد", "status", "partial");
+            }
+
+            $full_file_name = $uuid . '.' . pathinfo($fileName, PATHINFO_EXTENSION);
+            Response::success("فایل نهایی ذخیره شد", "fileName", basename($full_file_name));
+        }
+
+        if (!isset($_FILES['product_file']) || $_FILES['product_file']['error'] !== UPLOAD_ERR_OK) {
+            Response::error('فایل یافت نشد یا خطا دارد');
+        }
+
+        $file_path = $this->handle_file_upload($_FILES['product_file'], $upload_dir, $uuid, $time);
+
+        if (!$file_path) {
             Response::error('خطا در ذخیره فایل');
         }
 
-        Response::success('فایل ذخیره شد', 'fileName', $uuid . '.' . pathinfo($_FILES['product_file']['name'], PATHINFO_EXTENSION));
+        $file_name = $uuid . '.' . pathinfo($_FILES['product_file']['name'], PATHINFO_EXTENSION);
+        Response::success("فایل ذخیره شد", "fileName", basename($file_name));
     }
 
     public function move_file_by_uuid(string $uuid, string $temp_path, string $targetDir, Database $db, string $error_message): string
@@ -276,8 +325,10 @@ class Products extends Users
                 FROM {$this->table['products']} p1
                 INNER JOIN {$this->table['products']} p2 
                     ON p1.category_id = p2.category_id
-                INNER JOIN {$this->table['user_profiles']} up2 
-                    ON p2.instructor_id = up2.user_id
+                INNER JOIN {$this->table['instructors']} i2 
+                    ON p2.instructor_id = i2.id
+                    INNER JOIN {$this->table['user_profiles']} up2 
+                    ON i2.user_id = up2.user_id
                 WHERE p1.uuid = ? 
                 AND p2.uuid != ? 
                 AND p2.type = ?
