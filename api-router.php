@@ -21,7 +21,10 @@ $router->add('/auth/reset-password', 'POST', 'Classes\Users\Login', 'reset_passw
 $router->add('/users/get-shipping-info', 'GET', 'Classes\Users\Profile', 'get_shipping_info');
 $router->add('/users/update-profile', 'POST', 'Classes\Users\Profile', 'update_user_profile');
 $router->add('/users/update-avatar', 'POST', 'Classes\Users\Profile', 'update_user_avatar');
+$router->add('/users/search-users', 'GET', 'Classes\Users\Users', 'search_users');
 
+$router->add('/instructors/add-new-instructor', 'POST', 'Classes\Instructors\Instructors', 'add_new_instructor');
+$router->add('/instructors/update-instructor-info', 'POST', 'Classes\Instructors\Instructors', 'update_instructor_info');
 $router->add('/instructors/get-all', 'GET', 'Classes\Instructors\Instructors', 'get_instructors');
 
 $router->add('/products/add-new', 'POST', 'Classes\Products\Products', 'add_new_product');

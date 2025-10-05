@@ -39,6 +39,7 @@ class Database
         'course_students' => 'course_students',
         'discount_codes' => 'discount_codes',
         'instructors' => 'instructors',
+        'instructor_earnings' => 'instructor_earnings',
         'join_us_requests' => 'join_us_requests',
         'notifications' => 'notifications',
         'otps' => 'otps',

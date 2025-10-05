@@ -81,6 +81,16 @@ trait Base
         return $uuid ?: null;
     }
 
+    private function generate_slug($input, $sku)
+    {
+        $output = preg_replace('/[^a-zA-Z0-9\s\-_\x{0600}-\x{06FF}]/u', '', $input);
+        $output .= "-vc$sku";
+        $output = preg_replace('/\s+/', '-', $output);
+        $output = strtolower($output);
+        $output = trim($output, '-');
+        return $output;
+    }
+
     /**
      * Formats a number from Persian digits to English digits.
      *

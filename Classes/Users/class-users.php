@@ -1,6 +1,7 @@
 <?php
 namespace Classes\Users;
 
+use Classes\Base\Error;
 use Classes\Base\Sanitizer;
 use Classes\Base\Response;
 use Exception;
@@ -47,9 +48,17 @@ class Users extends Authentication
         return $user ? $user['id'] : null;
     }
 
+    public function get_id_by_email($email): int|null
+    {
+        $sql = "SELECT id FROM {$this->table['users']} WHERE email = ?";
+        $user = $this->getData($sql, [$email]);
+
+        return $user ? $user['id'] : null;
+    }
+
     public function get_id_by_national_id($national_id): int|null
     {
-        $sql = "SELECT id FROM {$this->table['users']} WHERE national_id = ?";
+        $sql = "SELECT id FROM {$this->table['user_certificates']} WHERE national_id = ?";
         $user = $this->getData($sql, [$national_id]);
 
         return $user ? $user['id'] : null;
@@ -105,6 +114,68 @@ class Users extends Authentication
         return $user ?: null;
     }
 
+    public function get_user_by_email($email, $columns = self::USER_COLUMNS): array|null
+    {
+        $user_id = $this->get_id_by_email($email);
+        if (!$user_id)
+            return null;
+        $user = $this->get_user_by_id($user_id, $columns);
+
+        return $user ?: null;
+    }
+
+    public function search_users($params)
+    {
+        $this->check_role(['admin']);
+
+        $where_condition = '';
+        $bind_params = [];
+
+        if (!empty($params['role']) && in_array($params['role'], ['user', 'instructor', 'admin'])) {
+            $where_condition = " WHERE role = ?";
+            $bind_params[] = $params['role'];
+        }
+
+        if (!empty($params['q'])) {
+            $query = $params['q'];
+            $condition = '(u.phone LIKE ? OR CONCAT(up.first_name_fa, " ", up.last_name_fa) LIKE ?) OR UPPER(u.email) LIKE UPPER(?)';
+
+            $where_condition .= $where_condition === '' ? " WHERE $condition" : " AND $condition";
+
+            $bind_params[] = "%$query%";
+            $bind_params[] = "%$query%";
+            $bind_params[] = "%$query%";
+        }
+
+        $sql = "SELECT
+                    u.uuid,
+                    u.phone,
+                    u.email,
+                    u.avatar,
+                    u.is_active,
+                    JSON_OBJECT(
+                    'first_name_fa', up.first_name_fa,
+                    'last_name_fa',  up.last_name_fa
+                    ) as profile
+                FROM {$this->table['users']} u
+                LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
+                $where_condition
+                GROUP BY u.id
+        ";
+
+        $users = $this->getData($sql, $bind_params, true);
+
+        if (!$users) {
+            Response::success('کاربری یافت نشد', 'users', []);
+        }
+
+        foreach ($users as &$user) {
+            $user['profile'] = json_decode($user['profile'], true);
+            $user['avatar'] = $this->get_full_image_url($user['avatar']);
+        }
+
+        Response::success('لیست کاربران دریافت شد', 'users', $users);
+    }
 
     public function check_password($phone, $password): bool
     {

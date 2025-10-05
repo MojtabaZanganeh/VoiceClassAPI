@@ -2,6 +2,7 @@
 CREATE TABLE
     users (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
         username VARCHAR(32) UNIQUE NOT NULL,
         phone VARCHAR(12) UNIQUE NOT NULL,
         email VARCHAR(254) UNIQUE,
@@ -173,9 +174,11 @@ CREATE TABLE
 CREATE TABLE
     instructors (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
         user_id INT UNSIGNED NOT NULL,
+        status ENUM ('active', 'inactive', 'suspended') DEFAULT 'active' NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
-        professional_title VARCHAR(50) NOT NULL,
+        professional_title VARCHAR(100) NOT NULL,
         bio TEXT NOT NULL,
         categories_id JSON NOT NULL,
         rating_avg FLOAT UNSIGNED DEFAULT 0 NOT NULL,
@@ -183,7 +186,33 @@ CREATE TABLE
         students INT UNSIGNED DEFAULT 0 NOT NULL,
         courses_taught INT UNSIGNED DEFAULT 0 NOT NULL,
         books_written INT UNSIGNED DEFAULT 0 NOT NULL,
+        share_percent TINYINT UNSIGNED DEFAULT '70' NOT NULL,
+        total_earnings BIGINT UNSIGNED DEFAULT 0 NOT NULL,
+        unpaid_earnings BIGINT UNSIGNED DEFAULT 0 NOT NULL,
         registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+    ) ENGINE = InnoDB;
+
+CREATE TABLE
+    instructor_earnings (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
+        instructor_id INT UNSIGNED NOT NULL,
+        order_item_id INT UNSIGNED NOT NULL,
+        product_id INT UNSIGNED NOT NULL,
+        chapter_id INT UNSIGNED DEFAULT NULL,
+        user_id INT UNSIGNED NOT NULL,
+        amount BIGINT UNSIGNED NOT NULL,
+        site_commission BIGINT UNSIGNED NOT NULL,
+        total_price BIGINT UNSIGNED NOT NULL,
+        status ENUM ('pending', 'paid', 'canceled') DEFAULT 'pending' NOT NULL,
+        settled_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (instructor_id) REFERENCES instructors (id),
+        FOREIGN KEY (order_item_id) REFERENCES order_items (id),
+        FOREIGN KEY (product_id) REFERENCES products (id),
+        FOREIGN KEY (chapter_id) REFERENCES chapters (id),
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
 

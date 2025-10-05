@@ -12,16 +12,6 @@ class Products extends Users
 {
     use Base, Sanitizer;
 
-    private function generate_slug($input, $sku)
-    {
-        $output = preg_replace('/[^a-zA-Z0-9\s\-_\x{0600}-\x{06FF}]/u', '', $input);
-        $output .= "-vc$sku";
-        $output = preg_replace('/\s+/', '-', $output);
-        $output = strtolower($output);
-        $output = trim($output, '-');
-        return $output;
-    }
-
     public function add_new_product($params)
     {
         $instructor = $this->check_role(['instructor', 'admin']);
@@ -31,8 +21,8 @@ class Products extends Users
             $creator_id = $instructor_id;
         } else {
             $instructor_data = $this->getData(
-                "SELECT id FROM {$this->table['instructors']} WHERE id = ?",
-                [$params['instructor']['id']]
+                "SELECT id FROM {$this->table['instructors']} WHERE uuid = ?",
+                [$params['instructor']['uuid']]
             );
 
             if (!$instructor_data) {

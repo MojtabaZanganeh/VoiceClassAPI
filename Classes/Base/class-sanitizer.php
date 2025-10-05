@@ -47,16 +47,10 @@ trait Sanitizer
     public static function sanitizeValue($value)
     {
         if (is_string($value)) {
-            $sanitizedValue = trim($value);
-            $sanitizedValue = htmlspecialchars($sanitizedValue, ENT_QUOTES, 'UTF-8');
-            return $sanitizedValue;
+            return trim($value);
         }
 
-        if (is_numeric($value)) {
-            return $value;
-        }
-
-        if (is_bool($value) || is_null($value)) {
+        if (is_numeric($value) || is_bool($value) || is_null($value)) {
             return $value;
         }
 
