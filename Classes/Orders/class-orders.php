@@ -86,16 +86,18 @@ class Orders extends Carts
 
         foreach ($order_items as $item) {
             $item_uuid = $this->generate_uuid();
+            $item_amount = $item['price'] - $item['discount_amount'];
+            $item_status = $item_amount > 0 ? 'pending-pay' : 'completed';
             $order_item_id[] = $db->insertData(
                 "INSERT INTO {$db->table['order_items']} (`uuid`, `order_id`, `product_id`, `status`, `access_type`, `quantity`, `price`) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 [
                     $item_uuid,
                     $order_id,
                     $item['id'],
-                    'pending-pay',
+                    $item_status,
                     $item['access_type'],
                     $item['quantity'],
-                    ($item['price'] - $item['discount_amount'])
+                    $item_amount
                 ]
             );
         }
@@ -105,6 +107,8 @@ class Orders extends Carts
         }
 
         $transaction_uuid = $this->generate_uuid();
+        $transaction_amount = $total_amount - $discout_amount;
+        $transaction_status = $transaction_amount > 0 ? 'pending-pay' : 'paid';
 
         $transaction_id = $db->insertData(
             "INSERT INTO {$db->table['transactions']} (`uuid`, `order_id`, `type`, `amount`, `status`) VALUES (?, ?, ?, ?, ?)",
@@ -112,8 +116,8 @@ class Orders extends Carts
                 $transaction_uuid,
                 $order_id,
                 'card',
-                ($total_amount - $discout_amount),
-                'pending-pay'
+                $transaction_amount,
+                $transaction_status
             ]
         );
 
@@ -124,7 +128,13 @@ class Orders extends Carts
         $this->clear_cart_items(['return' => true]);
 
         $db->commit();
-        Response::success('سفارش با موفقیت ثبت شد', 'orderId', $order_uuid);
+
+        if ($transaction_amount > 0) {
+            Response::success('سفارش با موفقیت ثبت شد', 'orderId', $order_uuid);
+        }
+        else {
+            Response::success('سفارش با موفقیت ثبت شد', 'free', 'true');
+        }
     }
 
     protected function get_order_items($order_id)

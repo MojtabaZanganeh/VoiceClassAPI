@@ -102,7 +102,7 @@ class Transactions extends Orders
                 LEFT JOIN {$this->table['user_profiles']} up ON o.user_id = up.user_id
                 WHERE o.user_id = ?
                 GROUP BY o.id, t.id
-                ORDER BY o.id;
+                ORDER BY t.created_at DESC;
         ";
 
         $transactions = $this->getData($sql, [$user['id']], true);

@@ -117,7 +117,7 @@ class Products extends Users
         $thumbnail_url = $thumbnail_path . $thumbnail;
         $current_time = $this->current_time();
 
-        $full_book = $this->check_input($params['digital_link'], null, 'فایل جزوه', '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/i');
+        $full_book = $type === 'book' ? $this->check_input($params['digital_link'], null, 'فایل جزوه', '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/i') : null;
 
         $product_status ??= 'need-approval';
 
