@@ -31,10 +31,10 @@ class Orders extends Carts
         $order_code = 'ORD_' . $this->get_random('int', 6, $this->table['orders'], 'code');
 
         $total_amount = 0;
-        $discout_amount = 0;
+        $discount_amount = 0;
         foreach ($order_items as $item) {
             $total_amount += $item['price'];
-            $discout_amount += $item['discount_amount'];
+            $discount_amount += $item['discount_amount'];
         }
 
         $db = new Database();
@@ -47,7 +47,7 @@ class Orders extends Carts
                 $user['id'],
                 $order_code,
                 NULL,
-                $discout_amount,
+                $discount_amount,
                 $total_amount,
                 $current_time,
                 $current_time
@@ -84,10 +84,18 @@ class Orders extends Carts
             }
         }
 
+        $order_item_id = [];
+        $free_book_item = false;
         foreach ($order_items as $item) {
+            $free_book_item = $item['access_type'] === 'printed' || $item['access_type'] === 'digital' ? true : false;
+
             $item_uuid = $this->generate_uuid();
             $item_amount = $item['price'] - $item['discount_amount'];
-            $item_status = $item_amount > 0 ? 'pending-pay' : 'completed';
+            $item_status = $item_amount > 0
+                ? 'pending-pay'
+                : ($item['access_type'] === 'printed'
+                    ? 'pending-review'
+                    : 'completed');
             $order_item_id[] = $db->insertData(
                 "INSERT INTO {$db->table['order_items']} (`uuid`, `order_id`, `product_id`, `status`, `access_type`, `quantity`, `price`) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 [
@@ -107,7 +115,7 @@ class Orders extends Carts
         }
 
         $transaction_uuid = $this->generate_uuid();
-        $transaction_amount = $total_amount - $discout_amount;
+        $transaction_amount = $total_amount - $discount_amount;
         $transaction_status = $transaction_amount > 0 ? 'pending-pay' : 'paid';
 
         $transaction_id = $db->insertData(
@@ -131,9 +139,8 @@ class Orders extends Carts
 
         if ($transaction_amount > 0) {
             Response::success('سفارش با موفقیت ثبت شد', 'orderId', $order_uuid);
-        }
-        else {
-            Response::success('سفارش با موفقیت ثبت شد', 'free', 'true');
+        } else {
+            Response::success('سفارش با موفقیت ثبت شد', 'free', $free_book_item ? 'books' : 'courses');
         }
     }
 

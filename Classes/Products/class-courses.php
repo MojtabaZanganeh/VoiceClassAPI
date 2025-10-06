@@ -17,7 +17,7 @@ class Courses extends Products
         $category = $params['category'] ?? null;
         $level = $params['level'] ?? null;
         $access_type = $params['access_type'] ?? null;
-        $sort = $params['sort'] ?? null;
+        $sort = $params['sort'] ?? 'newest';
         $current_page = $params['current_page'] ?? 0;
         $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 12) ? $params['per_page_count'] : 12;
 
