@@ -229,7 +229,7 @@ class Instructors extends Users
         }
 
         $columns = isset($params['select']) && $params['select'] === 'true'
-            ? 'i.id, i.professional_title, i.professional_title, '
+            ? 'i.uuid, i.professional_title, i.professional_title, '
             : "i.*, ";
         $admin_columns = $is_admin ? "u.phone, u.email," : "";
 
@@ -258,14 +258,16 @@ class Instructors extends Users
 
         foreach ($all_instructors as &$instructor) {
             $instructor['avatar'] = $this->get_full_image_url($instructor['avatar']);
-            $instructor['categories_id'] = json_decode($instructor['categories_id'], true);
+            $instructor['categories_id'] = !empty($instructor['categories_id']) ? json_decode($instructor['categories_id'], true) : [];
             $instructor['categories'] = !empty($instructor['categories_id']) ? $category_obj->get_categories_by_id($instructor['categories_id']) : '';
-            $instructor['paid_earnings'] = $instructor['total_earnings'] - $instructor['unpaid_earnings'];
             if (!$is_admin) {
                 unset($instructor['share_percent']);
                 unset($instructor['total_earnings']);
                 unset($instructor['unpaid_earnings']);
                 unset($instructor['paid_earnings']);
+            }
+            else {
+                $instructor['paid_earnings'] = $instructor['total_earnings'] - $instructor['unpaid_earnings'];
             }
         }
 

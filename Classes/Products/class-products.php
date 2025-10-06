@@ -7,6 +7,7 @@ use Classes\Base\Response;
 use Classes\Base\Sanitizer;
 use Classes\Base\Database;
 use Classes\Users\Users;
+use setasign\Fpdi\Fpdi;
 
 class Products extends Users
 {
@@ -116,8 +117,7 @@ class Products extends Users
         $thumbnail_url = $thumbnail_path . $thumbnail;
         $current_time = $this->current_time();
 
-        $demo_book = $type === 'book' ? $this->check_input($params['demo_link'], null, 'فایل دمو جزوه', '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/i') : null;
-        $full_book = $type === 'book' && $access_type === 'digital' ? $this->check_input($params['digital_link'], null, 'فایل جزوه', '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/i') : null;
+        $full_book = $this->check_input($params['digital_link'], null, 'فایل جزوه', '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/i');
 
         $product_status ??= 'need-approval';
 
@@ -165,21 +165,38 @@ class Products extends Users
                 [$product_id, $access_type, $chapter_data['lessons_count'], $chapter_data['total_length'], $access_type_price, $access_type_discount_amount]
             );
         } else {
-            $demo_book_url = $book_path . $demo_book;
             $full_book_url = $book_path . $full_book;
 
             if ($type === 'book') {
                 $full_book_uuid = explode('.', $full_book)[0];
                 $full_book_files = glob("{$temp_path}{$full_book_uuid}-*.*");
-                $pdf = new \Imagick();
                 if (!$full_book_files || count($full_book_files) === 0) {
                     Response::error('فایل کامل جزوه بارگذاری نشده است');
                 }
                 $full_book_temp = $full_book_files[0];
-                $pdf->pingImage($full_book_temp);
-                $pages = $pdf->getNumberImages();
+
+                $pdf = new Fpdi();
+                $pages = $pdf->setSourceFile($full_book_temp);
                 $size = round(filesize($full_book_temp) / 1024 / 1024, 2);
                 $format = strtoupper(pathinfo($full_book, PATHINFO_EXTENSION));
+
+                if ($pages < 5) {
+                    Response::error('جزوه نباید کمتر از ۵ صفحه باشد');
+                }
+
+                $all_pages = range(1, $pages);
+                $selected_pages = array_slice($all_pages, 0, $pages < 20 ? 3 : 5);
+
+                foreach ($selected_pages as $page_num) {
+                    $templateId = $pdf->importPage($page_num);
+                    $demo_size = $pdf->getTemplateSize($templateId);
+                    $pdf->AddPage($demo_size['orientation'], [$demo_size['width'], $demo_size['height']]);
+                    $pdf->useTemplate($templateId);
+                }
+
+                $demo_uuid = $this->generate_uuid();
+                $demo_book_url = $book_path.$demo_uuid.'.'.strtolower($format);
+                $pdf->Output('F', $demo_book_url);
             }
 
             if (!in_array($format, ['PDF', 'POWERPOINT', 'EPUB'])) {
@@ -213,13 +230,8 @@ class Products extends Users
         $this->move_file_by_uuid($thumbnail_uuid, $temp_path, $thumbnail_path, $db, 'تصویری بارگذاری نشده است');
 
         if ($type === 'book') {
-            $demo_book_uuid = explode('.', $demo_book)[0];
-            $this->move_file_by_uuid($demo_book_uuid, $temp_path, $book_path, $db, 'دمو جزوه بارگذاری نشده است');
-
-            if ($access_type === 'digital') {
-                $full_book_uuid = explode('.', $full_book)[0];
-                $this->move_file_by_uuid($full_book_uuid, $temp_path, $book_path, $db, 'جزوه بارگذاری نشده است');
-            }
+            $full_book_uuid = explode('.', $full_book)[0];
+            $this->move_file_by_uuid($full_book_uuid, $temp_path, $book_path, $db, 'جزوه بارگذاری نشده است');
         }
 
         $db->commit();
