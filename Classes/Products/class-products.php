@@ -18,8 +18,15 @@ class Products extends Users
         $instructor = $this->check_role(['instructor', 'admin']);
 
         if ($instructor['role'] === 'instructor') {
-            $instructor_id = $instructor['id'];
-            $creator_id = $instructor_id;
+            $creator_id = $instructor['id'];
+            $instructor_data = $this->getData(
+                "SELECT id FROM {$this->table['instructors']} WHERE user_id = ?",
+                [$instructor['id']]
+            );
+            if (!$instructor_data) {
+                Response::error('خطا در یافتن مدرس');
+            }
+            $instructor_id = $instructor_data['id'];
         } else {
             $instructor_data = $this->getData(
                 "SELECT id FROM {$this->table['instructors']} WHERE uuid = ?",
@@ -195,7 +202,7 @@ class Products extends Users
                 }
 
                 $demo_uuid = $this->generate_uuid();
-                $demo_book_url = $book_path.$demo_uuid.'.'.strtolower($format);
+                $demo_book_url = $book_path . $demo_uuid . '.' . strtolower($format);
                 $pdf->Output('F', $demo_book_url);
             }
 

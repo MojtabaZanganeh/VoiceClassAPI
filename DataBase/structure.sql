@@ -198,9 +198,9 @@ CREATE TABLE
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         uuid VARCHAR(36) UNIQUE NOT NULL,
         instructor_id INT UNSIGNED NOT NULL,
+        order_id INT UNSIGNED NOT NULL,
         order_item_id INT UNSIGNED NOT NULL,
         product_id INT UNSIGNED NOT NULL,
-        chapter_id INT UNSIGNED DEFAULT NULL,
         user_id INT UNSIGNED NOT NULL,
         amount BIGINT UNSIGNED NOT NULL,
         site_commission BIGINT UNSIGNED NOT NULL,
@@ -210,9 +210,9 @@ CREATE TABLE
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         FOREIGN KEY (instructor_id) REFERENCES instructors (id),
+        FOREIGN KEY (order_id) REFERENCES orders (id),
         FOREIGN KEY (order_item_id) REFERENCES order_items (id),
         FOREIGN KEY (product_id) REFERENCES products (id),
-        FOREIGN KEY (chapter_id) REFERENCES chapters (id),
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
 
