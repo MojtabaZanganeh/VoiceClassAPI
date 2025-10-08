@@ -139,7 +139,7 @@ class Profile extends Users
 
             [$province, $city] = $getProvinceCity($address['province'], $address['city']);
 
-            $full_address = $this->check_input($address['full_address'], 'fa_text', 'آدرس دقیق');
+            $full_address = $this->check_input($address['full_address'], null, 'آدرس دقیق', '/^[\x{0600}-\x{06FF}\s\x{200c}\-\x{060C},._\/#()\"\'’\d\x{06F0}-\x{06F9}]+$/u');
             $postal_code = $this->check_input($address['postal_code'], 'postal_code', 'کد پستی');
             $receiver_phone = $this->check_input($address['receiver_phone'], 'phone', 'شماره تماس گیرنده');
 

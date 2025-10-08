@@ -145,7 +145,14 @@ trait Sanitizer
                     break;
 
                 case 'password':
-                    if (preg_match('/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/', $value)) {
+                    if (
+                        !preg_match('/[\x{0600}-\x{06FF}\x{0660}-\x{0669}]/u', $value)
+                        && mb_strlen($value) >= 8
+                        && preg_match('/[A-Z]/', $value)
+                        && preg_match('/[a-z]/', $value)
+                        && preg_match('/\d/', $value)
+                        && preg_match('/[!@#\$%\^&\*\(\)\-_\+=\[\]\{\};:\'\"\\\\|,<\.>\/\?`~]/', $value)
+                    ) {
                         return $value;
                     }
                     break;

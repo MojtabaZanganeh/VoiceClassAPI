@@ -17,7 +17,7 @@ CREATE TABLE
 CREATE TABLE
     user_profiles (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id INT UNSIGNED NOT NULL,
+        user_id INT UNSIGNED UNIQUE NOT NULL,
         first_name_fa VARCHAR(50),
         last_name_fa VARCHAR(50),
         gender ENUM ('male', 'female'),
@@ -33,7 +33,7 @@ CREATE TABLE
 CREATE TABLE
     user_certificates (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id INT UNSIGNED NOT NULL,
+        user_id INT UNSIGNED UNIQUE NOT NULL,
         first_name_en VARCHAR(50),
         last_name_en VARCHAR(50),
         father_name VARCHAR(50),
@@ -47,7 +47,7 @@ CREATE TABLE
 CREATE TABLE
     user_addresses (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id INT UNSIGNED NOT NULL,
+        user_id INT UNSIGNED UNIQUE NOT NULL,
         province VARCHAR(50),
         city VARCHAR(50),
         full_address TEXT,
