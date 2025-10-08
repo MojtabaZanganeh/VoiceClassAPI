@@ -78,10 +78,13 @@ class Login extends Users
             Response::error('شماره قبلاً ثبت شده است.');
         }
 
+        $user_uuid = $this->generate_uuid();
+        
         $now = $this->current_time();
 
-        $sql = "INSERT INTO {$this->table['users']} (`username`, `phone`, `password`, `registered_at`) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO {$this->table['users']} (`uuid`, `username`, `phone`, `password`, `registered_at`) VALUES (?, ?, ?, ?, ?)";
         $execute = [
+            $user_uuid,
             $username,
             $phone,
             password_hash($password, PASSWORD_DEFAULT),
