@@ -128,6 +128,7 @@ class Courses extends Products
         $sql = "SELECT
                     p.uuid,
                     p.status,
+                    p.instructor_active,
                     p.category_id,
                     pc.name AS category,
                     p.thumbnail,

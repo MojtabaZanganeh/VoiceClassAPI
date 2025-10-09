@@ -132,6 +132,8 @@ class Books extends Products
         $sql = "SELECT
                     p.id,
                     p.uuid,
+                    p.status,
+                    p.instructor_active,
                     p.category_id,
                     pc.name AS category,
                     p.thumbnail,
