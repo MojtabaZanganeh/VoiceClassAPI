@@ -152,7 +152,12 @@ class Courses extends Products
                     cd.access_type,
                     cd.duration,
                     cd.all_lessons_count,
-                    cd.record_progress,
+                    (
+                        SELECT COUNT(*)
+                        FROM {$this->table['chapter_lessons']} cl
+                        INNER JOIN {$this->table['chapters']} c ON cl.chapter_id = c.id
+                        WHERE c.product_id = p.id AND cl.link IS NOT NULL
+                    ) as record_progress,
                     cd.online_price,
                     cd.online_discount_amount
                 FROM {$this->table['products']} p
@@ -218,7 +223,7 @@ class Courses extends Products
             $user_course['instructor'] = json_decode($user_course['instructor']);
             $user_course['thumbnail'] = $this->get_full_image_url($user_course['thumbnail']);
         }
-        
+
         Response::success('دوره های کاربر دریافت شد', 'userCourses', $user_courses);
     }
 }

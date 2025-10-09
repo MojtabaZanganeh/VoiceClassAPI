@@ -69,9 +69,9 @@ class Products extends Users
             Response::error('نوع دسترسی به محصول معتبر نیست');
         }
 
-        $title = $this->check_input($params['title'], null, 'عنوان محصول', '/^[\p{L}\p{N}\p{M}\p{Extended_Pictographic}\s]{3,75}$/u');
+        $title = $this->check_input($params['title'], null, 'عنوان محصول', '/^.{3,75}$/us');
 
-        $introduction = $this->check_input($params['introduction'], null, 'معرفی کوتاه', '/^[\p{L}\p{N}\p{M}\p{Extended_Pictographic}\s]{7,150}$/u');
+        $introduction = $this->check_input($params['introduction'], null, 'معرفی کوتاه', '/^.{7,150}$/us');
 
         $description = $this->check_input($params['description'], null, 'توضیحات محصول', '/^.{150,}$/us');
 
