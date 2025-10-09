@@ -23,9 +23,13 @@ class Carts extends Users
         $item_access_type = $params['access_type'];
         $item_quantity = $params['quantity'];
 
-        $product = $this->getData("SELECT id FROM {$this->table['products']} WHERE uuid = ?", [$item_uuid]);
+        $product = $this->getData("SELECT `id`, `status`, `instructor_active` FROM {$this->table['products']} WHERE uuid = ?", [$item_uuid]);
         if (!$product) {
             Response::error('محصول یافت نشد');
+        }
+
+        if ($product['status'] !== 'verified' || $product['instructor_active'] != true) {
+            Response::error('محصول معتبر نیست');
         }
 
         if (!in_array($item_access_type, ['online', 'recorded', 'printed', 'digital'])) {

@@ -309,14 +309,14 @@ class Transactions extends Orders
                     break;
             }
 
-            $update_item_status[] = $db->updateData(
+            $update_item_status = $db->updateData(
                 "UPDATE {$db->table['order_items']} SET `status` = ? WHERE id = ?",
                 [$item_status, $item['id']]
             );
-        }
 
-        if (in_array(false, $update_item_status)) {
-            Response::error('خطا در بروزرسانی وضعیت سفارش', null, 400, $db);
+            if ($update_item_status === false) {
+                Response::error('خطا در بروزرسانی وضعیت سفارش', null, 400, $db);
+            }
         }
 
         $db->commit();

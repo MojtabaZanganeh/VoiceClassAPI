@@ -100,7 +100,7 @@ class Courses extends Products
                 LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
                 LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
                 LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
-                WHERE p.type = 'course' AND p.status = 'verified' AND i.status = 'active' $where_condition
+                WHERE p.type = 'course' AND p.status = 'verified' AND p.instructor_active = 1 $where_condition
                 GROUP BY p.id
                 ORDER BY $sort_condition
                 LIMIT ? OFFSET ?
@@ -123,8 +123,11 @@ class Courses extends Products
     {
         $this->check_params($params, ['slug']);
 
+        $where_condition = $this->check_role(['admin'], false) === false ? " AND p.status = 'verified' AND p.instructor_active = 1 " : '';
+
         $sql = "SELECT
                     p.uuid,
+                    p.status,
                     p.category_id,
                     pc.name AS category,
                     p.thumbnail,
@@ -166,7 +169,7 @@ class Courses extends Products
                 LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
                 LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
                 LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
-                WHERE p.slug = ? AND i.status = 'active'
+                WHERE p.slug = ? $where_condition
                 ORDER BY p.created_at DESC
                 LIMIT 1;
         ";

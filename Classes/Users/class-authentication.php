@@ -218,7 +218,9 @@ class Authentication extends Database
         $phone = $params['phone'];
         $username = $params['username'];
         $role = $params['role'];
-        $time = isset($params['time']) ? $this->get_timestamp($params['time']) : $this->get_timestamp();
+
+        $exp_day = $role === 'admin' ? 1 : 7;
+        $time = $this->get_timestamp($exp_day);
 
         $payload = [
             'user_id' => $user_id,

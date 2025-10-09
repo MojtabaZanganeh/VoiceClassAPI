@@ -184,7 +184,7 @@ class Users extends Authentication
         return password_verify($password, $user['password']);
     }
 
-    public function check_role($roles = ['user', 'instructor', 'admin'], $token = null)
+    public function check_role($roles = ['user', 'instructor', 'admin'], $response = true, $token = null)
     {
         try {
             $token = $token === null ? getallheaders()['Authorization'] ?? null : $token;
@@ -224,7 +224,11 @@ class Users extends Authentication
 
             return $user;
         } catch (Exception $e) {
-            Response::error('شما دسترسی لازم را ندارید');
+            if ($response) {
+                Response::error('شما دسترسی لازم را ندارید');
+            } else {
+                return false;
+            }
         }
     }
 }

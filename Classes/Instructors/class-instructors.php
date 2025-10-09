@@ -194,8 +194,11 @@ class Instructors extends Users
             Response::error('وضعیت معتبر نیست');
         }
 
-        $update_info = $this->updateData(
-            "UPDATE {$this->table['instructors']} SET `professional_title` = ?, `bio` = ?, `categories_id` = ?, `status` = ? WHERE id = ?",
+        $db = new Database();
+        $db->beginTransaction();
+
+        $update_info = $db->updateData(
+            "UPDATE {$db->table['instructors']} SET `professional_title` = ?, `bio` = ?, `categories_id` = ?, `status` = ? WHERE id = ?",
             [
                 $professional_title,
                 $bio,
@@ -206,8 +209,36 @@ class Instructors extends Users
         );
 
         if (!$update_info) {
-            Response::error('خطا در بروزرسانی اطلاعات مدرس');
+            Response::error('خطا در بروزرسانی اطلاعات مدرس', null, 500, $db);
         }
+
+        $instructor_products = $db->getData(
+            "SELECT `id`, `status` FROM {$db->table['products']} WHERE instructor_id = ?",
+            [$instructor['id']],
+            true
+        );
+
+        if (!$instructor_products) {
+            Response::error('خطا در دریافت محصولات مدرس', null, 500, $db);
+        }
+
+        $instructor_active = $status === 'active' ? true : false;
+
+        foreach ($instructor_products as $product) {
+            $update_instructor_active = $db->updateData(
+                "UPDATE {$db->table['products']} SET `instructor_active` = ? WHERE `instructor_id` = ?",
+                [
+                    $instructor_active,
+                    $instructor['id']
+                ]
+            );
+
+            if (!$update_instructor_active) {
+                Response::error('خطا در بروزرسانی وضعیت محصول', null, 500, $db);
+            }
+        }
+
+        $db->commit();
 
         Response::success('اطلاعات مدرس بروز شد');
     }
@@ -265,8 +296,7 @@ class Instructors extends Users
                 unset($instructor['total_earnings']);
                 unset($instructor['unpaid_earnings']);
                 unset($instructor['paid_earnings']);
-            }
-            else {
+            } else {
                 $instructor['paid_earnings'] = $instructor['total_earnings'] - $instructor['unpaid_earnings'];
             }
         }

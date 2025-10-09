@@ -88,9 +88,11 @@ CREATE TABLE
             'not-completed',
             'need-approval',
             'verified',
+            'rejected',
             'deleted',
             'admin-deleted'
         ) NOT NULL,
+        instructor_active BOOLEAN DEFAULT TRUE NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED NOT NULL,
         instructor_id INT UNSIGNED NOT NULL,
