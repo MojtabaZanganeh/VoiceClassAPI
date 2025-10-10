@@ -69,6 +69,8 @@ class Profile extends Users
         if (isset($params['profile'])) {
             $profile = $params['profile'];
 
+            $this->check_params($profile,['first_name_fa', 'last_name_fa', 'gender', 'birth_date', 'province', 'city']);
+
             $first_name_fa = $this->check_input($profile['first_name_fa'], 'fa_name', 'نام فارسی');
             $last_name_fa = $this->check_input($profile['last_name_fa'], 'fa_name', 'نام خانوادگی فارسی');
 
@@ -108,6 +110,8 @@ class Profile extends Users
         elseif (isset($params['certificate'])) {
             $certificate = $params['certificate'];
 
+            $this->check_params($certificate,['first_name_en', 'last_name_en', 'father_name', 'national_id']);
+
             $first_name_en = $this->check_input($certificate['first_name_en'], 'en_name', 'نام انگلیسی');
             $last_name_en = $this->check_input($certificate['last_name_en'], 'en_name', 'نام خانوادگی انگلیسی');
             $father_name = $this->check_input($certificate['father_name'], 'fa_text', 'نام پدر');
@@ -136,6 +140,8 @@ class Profile extends Users
 
         elseif (isset($params['address'])) {
             $address = $params['address'];
+
+            $this->check_params($address,['province', 'city', 'full_address', 'postal_code', 'receiver_phone']);
 
             [$province, $city] = $getProvinceCity($address['province'], $address['city']);
 
