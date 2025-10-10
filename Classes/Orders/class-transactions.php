@@ -7,6 +7,7 @@ use Classes\Base\Error;
 use Classes\Base\Response;
 use Classes\Base\Sanitizer;
 use Classes\Orders\Orders;
+use Exception;
 
 class Transactions extends Orders
 {
@@ -249,78 +250,131 @@ class Transactions extends Orders
         }
 
         $db = new Database();
-        $db->beginTransaction();
+        try {
+            $db->beginTransaction();
 
-        $update_transaction = $db->updateData(
-            "UPDATE {$db->table['transactions']} SET `status` = ? WHERE uuid = ?",
-            [
-                $new_status,
-                $params['transaction_uuid']
-            ]
-        );
-
-        if (!$update_transaction) {
-            Response::error('خطا در تغییر وضعیت تراکنش', null, 400, $db);
-        }
-
-        $order = $db->getData(
-            "SELECT order_id FROM {$db->table['transactions']} WHERE uuid = ?",
-            [
-                $params['transaction_uuid']
-            ]
-        );
-
-        if (!$order) {
-            Response::error('خطا در دریافت سفارش', null, 400, $db);
-        }
-
-        $items = $db->getData(
-            "SELECT id, access_type FROM {$db->table['order_items']} WHERE order_id = ?",
-            [$order['order_id']],
-            true
-        );
-
-        if (!$items) {
-            Response::error('هیچ آیتمی برای این سفارش پیدا نشد', null, 400, $db);
-        }
-
-        foreach ($items as $item) {
-            switch ($new_status) {
-                case 'pending-pay':
-                case 'need-approval':
-                    $item_status = 'pending-pay';
-                    break;
-
-                case 'paid':
-                    $item_status = $item['access_type'] === 'printed' ? 'pending-review' : 'completed';
-                    break;
-
-                case 'failed':
-                case 'rejected':
-                    $item_status = 'rejected';
-                    break;
-
-                case 'canceled':
-                    $item_status = 'canceled';
-                    break;
-
-                default:
-                    $item_status = 'pending-pay';
-                    break;
-            }
-
-            $update_item_status = $db->updateData(
-                "UPDATE {$db->table['order_items']} SET `status` = ? WHERE id = ?",
-                [$item_status, $item['id']]
+            $update_transaction = $db->updateData(
+                "UPDATE {$db->table['transactions']} SET `status` = ? WHERE uuid = ?",
+                [
+                    $new_status,
+                    $params['transaction_uuid']
+                ]
             );
 
-            if ($update_item_status === false) {
-                Response::error('خطا در بروزرسانی وضعیت سفارش', null, 400, $db);
+            if (!$update_transaction) {
+                throw new Exception('خطا در تغییر وضعیت تراکنش');
             }
+
+            $order = $db->getData(
+                "SELECT order_id FROM {$db->table['transactions']} WHERE uuid = ?",
+                [
+                    $params['transaction_uuid']
+                ]
+            );
+
+            if (!$order) {
+                throw new Exception('خطا در دریافت سفارش');
+            }
+
+            $items = $db->getData(
+                "SELECT id, product_id, access_type, price FROM {$db->table['order_items']} WHERE order_id = ?",
+                [$order['order_id']],
+                true
+            );
+
+            if (!$items) {
+                throw new Exception('هیچ آیتمی برای این سفارش پیدا نشد');
+            }
+
+            foreach ($items as $item) {
+                switch ($new_status) {
+                    case 'pending-pay':
+                    case 'need-approval':
+                        $item_status = 'pending-pay';
+                        $instructor_earning_status = 'canceled';
+                        break;
+
+                    case 'paid':
+                        $item_status = $item['access_type'] === 'printed' ? 'pending-review' : 'completed';
+                        $instructor_earning_status = 'pending';
+                        break;
+
+                    case 'failed':
+                    case 'rejected':
+                        $item_status = 'rejected';
+                        $instructor_earning_status = 'canceled';
+                        break;
+
+                    case 'canceled':
+                        $item_status = 'canceled';
+                        $instructor_earning_status = 'canceled';
+                        break;
+
+                    default:
+                        $item_status = 'pending-pay';
+                        $instructor_earning_status = 'canceled';
+                        break;
+                }
+
+                $update_item_status = $db->updateData(
+                    "UPDATE {$db->table['order_items']} SET `status` = ? WHERE id = ?",
+                    [$item_status, $item['id']]
+                );
+
+                if ($update_item_status === false) {
+                    throw new Exception('خطا در بروزرسانی وضعیت سفارش');
+                }
+
+                $instructor = $db->getData(
+                    "SELECT i.id, i.share_percent
+                        FROM {$db->table['products']} p
+                        INNER JOIN {$db->table['instructors']} i ON i.id = p.instructor_id
+                        WHERE p.id = ?",
+                    [$item['product_id']]
+                );
+
+                if (!$instructor) {
+                    throw new Exception('خطا در دریافت اطلاعات مدرس');
+                }
+
+                $earning_uuid = $this->generate_uuid();
+
+                $instructor_earning_amount = $item['price'] * ($instructor['share_percent'] / 100);
+
+                $site_commission = $item['price'] - $instructor_earning_amount;
+
+                $current_time = $this->current_time();
+
+                $update_instructor_earning = $db->insertData(
+                    "INSERT INTO {$db->table['instructor_earnings']} (uuid, instructor_id, order_item_id, amount, site_commission, total_price, `status`, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
+                        ON DUPLICATE KEY UPDATE
+                        `status` = VALUES(status),
+                        updated_at = VALUES(updated_at)",
+                    [
+                        $earning_uuid,
+                        $instructor['id'],
+                        $item['id'],
+                        $instructor_earning_amount,
+                        $site_commission,
+                        $item['price'],
+                        $instructor_earning_status,
+                        $current_time,
+                        $current_time
+                    ]
+                );
+
+                if (!$update_instructor_earning) {
+                    throw new Exception('خطا در ثبت سهم مدرس');
+                }
+            }
+
+            $db->commit();
+            Response::success('وضعیت سفارش به‌روزرسانی شد');
+
+        } catch (Exception $e) {
+            $db->rollback();
+            Response::error($e ? $e->getMessage() : 'خطا در بروزرسانی وضعیت تراکنش', null, 400, $db);
         }
-
-        $db->commit();
-
-        Response::success('وضعیت سفارش به‌روزرسانی شد');
     }
 }

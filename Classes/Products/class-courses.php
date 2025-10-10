@@ -18,7 +18,7 @@ class Courses extends Products
         $level = $params['level'] ?? null;
         $access_type = $params['access_type'] ?? null;
         $sort = $params['sort'] ?? 'newest';
-        $current_page = $params['current_page'] ?? 0;
+        $current_page = $params['current_page'] ?? 1;
         $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 12) ? $params['per_page_count'] : 12;
 
         $where_condition = '';
@@ -45,7 +45,7 @@ class Courses extends Products
         }
 
         $bindParams[] = $per_page_count;
-        $bindParams[] = $current_page * $per_page_count;
+        $bindParams[] = ($current_page - 1) * $per_page_count;
 
         switch ($sort) {
             case 'newest':
