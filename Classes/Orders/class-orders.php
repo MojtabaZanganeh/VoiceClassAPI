@@ -8,6 +8,7 @@ use Classes\Base\Sanitizer;
 use Classes\Base\Error;
 use Classes\Users\Users;
 use DateTime;
+use Exception;
 
 class Orders extends Carts
 {
@@ -319,10 +320,15 @@ class Orders extends Carts
 
         $this->check_params($params, ['item_uuid', 'status']);
 
+        $new_status = $params['status'];
+        if (!in_array($new_status, ['pending-pay', 'pending-review', 'sending', 'completed', 'rejected', 'canceled'])) {
+            Response::error('وضعیت جدید معتبر نیست');
+        }
+
         $update_transaction = $this->updateData(
             "UPDATE {$this->table['order_items']} SET `status` = ? WHERE uuid = ?",
             [
-                $params['status'],
+                $new_status,
                 $params['item_uuid']
             ]
         );

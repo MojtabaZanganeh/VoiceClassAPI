@@ -52,7 +52,7 @@ class Response
      * @param int $code HTTP status code for the response. Default is 400 (Bad Request).
      * @return never This method does not return any value, it will stop execution and send the response.
      */
-    public static function error(string $message, $errors = null, int $code = 400, Database $db = null): never
+    public static function error(string $message, $errors = null, int $code = 400, ?Database $db = null): never
     {
         if ($db) {
             $db->rollback();

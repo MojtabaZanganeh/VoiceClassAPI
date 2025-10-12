@@ -145,9 +145,9 @@ class Authentication extends Database
                     $phone,
                     $receive_code
                 ];
-                $insert = $this->insertData($sql, $execute);
+                $update = $this->updateData($sql, $execute);
 
-                if (!$insert) {
+                if (!$update) {
                     error_log('The code status was not saved in the database: TIME:' . time() . ' PHONE:' . $phone);
                 }
 

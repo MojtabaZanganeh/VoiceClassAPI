@@ -13,180 +13,48 @@ class Courses extends Products
 
     public function get_all_courses($params)
     {
-        $query = $params['query'] ?? null;
-        $category = $params['category'] ?? null;
-        $level = $params['level'] ?? null;
-        $access_type = $params['access_type'] ?? null;
-        $sort = $params['sort'] ?? 'newest';
-        $current_page = $params['current_page'] ?? 1;
-        $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 12) ? $params['per_page_count'] : 12;
-
-        $where_condition = '';
-        $bindParams = [];
-
-        if ($query) {
-            $where_condition .= " AND p.title LIKE ?";
-            $bindParams[] = "%{$query}%";
-        }
-
-        if ($category && is_numeric($category) && $category > 0) {
-            $where_condition .= " AND p.category_id = ?";
-            $bindParams[] = $category;
-        }
-
-        if ($level && in_array($level, ['beginner', 'intermediate', 'advanced', 'expert'])) {
-            $where_condition .= " AND p.level = ?";
-            $bindParams[] = $level;
-        }
-
-        if ($access_type && in_array($access_type, ['online', 'recorded'])) {
-            $where_condition .= " AND cd.access_type = ?";
-            $bindParams[] = $access_type;
-        }
-
-        $bindParams[] = $per_page_count;
-        $bindParams[] = ($current_page - 1) * $per_page_count;
-
-        switch ($sort) {
-            case 'newest':
-                $sort_condition = 'p.created_at DESC';
-                break;
-
-            case 'rating':
-                $sort_condition = 'p.rating_avg DESC';
-                break;
-
-            case 'students':
-                $sort_condition = 'p.students DESC';
-                break;
-
-            case 'price_asc':
-                $sort_condition = '(p.price - p.discount_amount) ASC';
-                break;
-
-            case 'price_desc':
-                $sort_condition = '(p.price - p.discount_amount) DESC';
-                break;
-
-            default:
-                $sort_condition = 'p.created_at DESC';
-                break;
-        }
-
-        $sql = "SELECT
-                    p.id,
-                    p.uuid,
-                    p.slug,
-                    pc.name AS category,
-                    p.thumbnail,
-                    p.title,
-                    JSON_OBJECT(
-                        'name', CONCAT(up.first_name_fa, ' ', up.last_name_fa),
-                        'avatar', u.avatar,
-                        'professional_title', i.professional_title
-                    ) AS instructor,
-                    p.introduction,
-                    p.level,
-                    p.price,
-                    p.discount_amount,
-                    p.rating_avg,
-                    p.rating_count,
-                    p.students,
-                    cd.access_type,
-                    cd.duration
-                FROM {$this->table['products']} p
-                LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id
-                LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
-                LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
-                LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
-                LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
-                WHERE p.type = 'course' AND p.status = 'verified' AND p.instructor_active = 1 $where_condition
-                GROUP BY p.id
-                ORDER BY $sort_condition
-                LIMIT ? OFFSET ?
-        ";
-        $all_courses = $this->getData($sql, $bindParams, true);
-
-        if (!$all_courses) {
-            Response::success('دوره ای یافت نشد', 'allCourses', []);
-        }
-
-        foreach ($all_courses as &$course) {
-            $course['thumbnail'] = $this->get_full_image_url($course['thumbnail']);
-            $course['instructor'] = json_decode($course['instructor'], true);
-            $course['instructor']['avatar'] = $this->get_full_image_url($course['instructor']['avatar']);
-        }
-        Response::success('دوره ها دریافت شد', 'allCourses', $all_courses);
+        $this->get_products(
+            params: $params,
+            type: 'course',
+            details_table: 'course_details',
+            select_fields: 'dt.access_type, dt.duration',
+            access_types: ['online', 'recorded'],
+            not_found_message: 'دوره ای یافت نشد',
+            success_message: 'دوره ها دریافت شد',
+            response_key: 'allCourses'
+        );
     }
 
     public function get_course_by_slug($params)
     {
-        $this->check_params($params, ['slug']);
+        $additional_where = $this->check_role(['admin'], false) === false
+            ? " AND p.status = 'verified' AND p.instructor_active = 1 "
+            : '';
 
-        $where_condition = $this->check_role(['admin'], false) === false ? " AND p.status = 'verified' AND p.instructor_active = 1 " : '';
-
-        $sql = "SELECT
-                    p.uuid,
-                    p.status,
-                    p.instructor_active,
-                    p.category_id,
-                    pc.name AS category,
-                    p.thumbnail,
-                    p.title,
-                    JSON_OBJECT(
-                        'name', CONCAT(up.first_name_fa, ' ', up.last_name_fa),
-                        'avatar', u.avatar,
-                        'professional_title', i.professional_title,
-                        'bio', i.bio,
-                        'rating_avg', i.rating_avg,
-                        'rating_count', i.rating_count,
-                        'students', i.students,
-                        'courses_taught', i.courses_taught
-                    ) AS instructor,
-                    p.introduction,
-                    p.description,
-                    p.what_you_learn,
-                    p.requirements,
-                    p.level,
-                    p.price,
-                    p.discount_amount,
-                    p.rating_avg,
-                    p.rating_count,
-                    p.students,
-                    cd.access_type,
-                    cd.duration,
-                    cd.all_lessons_count,
-                    (
-                        SELECT COUNT(*)
-                        FROM {$this->table['chapter_lessons']} cl
-                        INNER JOIN {$this->table['chapters']} c ON cl.chapter_id = c.id
-                        WHERE c.product_id = p.id AND cl.link IS NOT NULL
-                    ) as record_progress,
-                    cd.online_price,
-                    cd.online_discount_amount
-                FROM {$this->table['products']} p
-                LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id
-                LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
-                LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
-                LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
-                LEFT JOIN {$this->table['course_details']} cd ON p.id = cd.product_id
-                WHERE p.slug = ? $where_condition
-                ORDER BY p.created_at DESC
-                LIMIT 1;
-        ";
-        $course = $this->getData($sql, [$params['slug']]);
-
-        if (!$course) {
-            Response::error('دوره ای یافت نشد');
-        }
-
-        $course['thumbnail'] = $this->get_full_image_url($course['thumbnail']);
-        $course['instructor'] = json_decode($course['instructor'], true);
-        $course['instructor']['avatar'] = $this->get_full_image_url($course['instructor']['avatar']);
-        $course['what_you_learn'] = json_decode($course['what_you_learn'], true);
-        $course['requirements'] = json_decode($course['requirements'], true);
-
-        Response::success('دوره دریافت شد', 'course', $course);
+        $this->get_product_by_slug($params, [
+            'details_table' => 'course_details',
+            'select_fields' => "
+            dt.access_type,
+            dt.duration,
+            dt.all_lessons_count,
+            (
+                SELECT COUNT(*)
+                FROM {$this->table['chapter_lessons']} cl
+                INNER JOIN {$this->table['chapters']} c ON cl.chapter_id = c.id
+                WHERE c.product_id = p.id AND cl.link IS NOT NULL
+            ) AS record_progress,
+            dt.online_price,
+            dt.online_discount_amount
+        ",
+            'instructor_stats_field' => 'courses_taught',
+            'additional_where' => $additional_where,
+            'special_processing' => null,
+            'messages' => [
+                'not_found' => 'دوره ای یافت نشد',
+                'success' => 'دوره دریافت شد',
+                'response_key' => 'course'
+            ]
+        ]);
     }
 
     public function get_user_courses()

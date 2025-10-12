@@ -29,7 +29,7 @@ trait Base
      * @param string|null $row_name The column name to check for uniqueness (optional).
      * @return string The generated random string.
      */
-    public static function get_random($type, int $length, $table_name = null, $row_name = null, Database $db = null)
+    public static function get_random($type, int $length, $table_name = null, $row_name = null, ?Database $db = null)
     {
         if ($type == 'int') {
             $characters = '0123456789';

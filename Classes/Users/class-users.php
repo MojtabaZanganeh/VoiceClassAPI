@@ -19,7 +19,7 @@ class Users extends Authentication
     use Sanitizer;
     private $user_id;
 
-    private const USER_COLUMNS = 'id, username, phone, email, password, role, avatar, is_active, registered_at';
+    private const USER_COLUMNS = 'id, uuid, username, phone, email, password, role, avatar, is_active, registered_at';
     private const USER_PROFILE_COLUMNS = 'id, user_id, first_name_fa, last_name_fa, gender, birth_date, province, city, created_at, updated_at';
     private const USER_CERTIFICATE_COLUMNS = 'id, user_id, first_name_en, last_name_en, father_name, national_id, created_at, updated_at';
     private const USER_ADDRESS_COLUMNS = 'id, user_id, province, city, full_address, postal_code, receiver_phone, created_at, updated_at';

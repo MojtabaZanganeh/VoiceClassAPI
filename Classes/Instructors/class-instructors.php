@@ -13,6 +13,19 @@ class Instructors extends Users
 {
     use Base, Sanitizer;
 
+    public function get_instructor_by_user_id($user_id, $columns = '*')
+    {
+        $instructor = $this->getData(
+            "SELECT $columns FROM {$this->table['instructors']} WHERE user_id = ?",
+            [$user_id]
+        );
+
+        if (!$instructor) {
+            Response::error('مدرس یافت نشد');
+        }
+        return $instructor;
+    }
+
     public function add_new_instructor($params)
     {
         $admin = $this->check_role(['admin']);
@@ -222,7 +235,7 @@ class Instructors extends Users
             Response::error('خطا در دریافت محصولات مدرس', null, 500, $db);
         }
 
-        $instructor_active = $status === 'active' ? true : false;
+        $instructor_active = $status === 'active' ? 1 : 0;
 
         foreach ($instructor_products as $product) {
             $update_instructor_active = $db->updateData(

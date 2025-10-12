@@ -234,6 +234,12 @@ trait Sanitizer
                     if (is_bool($value)) {
                         return $value;
                     }
+                    if ($value === 1 || $value === '1') {
+                        return true;
+                    }
+                    if ($value === 0 || $value === '0') {
+                        return false;
+                    }
                     break;
 
                 case 'array':

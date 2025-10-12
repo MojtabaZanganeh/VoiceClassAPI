@@ -28,6 +28,8 @@ $router->add('/instructors/update-instructor-info', 'POST', 'Classes\Instructors
 $router->add('/instructors/get-all', 'GET', 'Classes\Instructors\Instructors', 'get_instructors');
 
 $router->add('/products/add-new', 'POST', 'Classes\Products\Products', 'add_new_product');
+$router->add('/products/update-product', 'POST', 'Classes\Products\Products', 'update_product');
+$router->add('/products/update-product-status', 'POST', 'Classes\Products\Products', 'update_product_status');
 $router->add('/products/upload-product-file', 'POST', 'Classes\Products\Products', 'upload_product_file');
 $router->add('/products/get-similar-products', 'GET', 'Classes\Products\Products', 'get_similar_products');
 
