@@ -29,17 +29,16 @@ class Books extends Products
         $this->get_product_by_slug($params, [
             'details_table' => 'book_details',
             'select_fields' => "
-            dt.access_type,
-            dt.pages,
-            dt.format,
-            dt.size,
-            dt.all_lessons_count,
-            dt.printed_price,
-            dt.printed_discount_amount,
-            dt.demo_link
-        ",
+                dt.access_type,
+                dt.pages,
+                dt.format,
+                dt.size,
+                dt.all_lessons_count,
+                dt.printed_price,
+                dt.printed_discount_amount,
+                dt.demo_link
+            ",
             'instructor_stats_field' => 'books_written',
-            'additional_where' => " AND i.status = 'active' ",
             'special_processing' => function (&$product) {
                 $product['demo_link'] = $this->get_full_image_url($product['demo_link']);
             },

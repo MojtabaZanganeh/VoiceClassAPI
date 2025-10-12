@@ -15,9 +15,9 @@ class Products extends Users
 {
     use Base, Sanitizer;
 
-    private function check_instructor_permission($instructor_id, $product_uuid)
+    private function check_instructor_permission($instructor_id, $product_slug)
     {
-        $product = $this->getData("SELECT instructor_id FROM {$this->table['products']} WHERE uuid = ?", [$product_uuid]);
+        $product = $this->getData("SELECT instructor_id FROM {$this->table['products']} WHERE slug = ?", [$product_slug]);
         if ($product && $product['instructor_id'] === $instructor_id) {
             return true;
         }
@@ -193,27 +193,30 @@ class Products extends Users
     {
         $this->check_params($params, [['slug', 'uuid']]);
 
-        if (!empty($params['uuid'])) {
-            $user = $this->check_role(['instructor', 'admin']);
-            if ($user['role'] === 'instructor') {
-                $instructor_obj = new Instructors();
-                $instructor = $instructor_obj->get_instructor_by_user_id($user['id']);
-                $this->check_instructor_permission($instructor['id'], $params['uuid']);
-            }
-            $slug = $this->get_slug_by_uuid($params['uuid']);
-        } else {
-            $slug = !empty($params['slug']) ? $params['slug'] : null;
-        }
+        $slug = !empty($params['uuid']) ? $this->get_slug_by_uuid($params['uuid']) : (!empty($params['slug']) ? $params['slug'] : null);
 
         if (!$slug) {
             Response::error('محصولی یافت نشد');
+        }
+
+        $additional_where = " AND p.status = 'verified' AND i.status = 'active' ";
+        if (isset($params['dashboard']) && $params['dashboard'] === 'true') {
+            $user = $this->check_role(['instructor', 'admin']);
+
+            $is_instructor = $user && $user['role'] === 'instructor';
+            if ($is_instructor) {
+                $instructor_obj = new Instructors();
+                $instructor = $instructor_obj->get_instructor_by_user_id($user['id']);
+                $this->check_instructor_permission($instructor['id'], $slug);
+            }
+
+            $additional_where = '';
         }
 
         $defaultConfig = [
             'details_table' => '',
             'select_fields' => '',
             'instructor_stats_field' => '',
-            'additional_where' => '',
             'special_processing' => null,
             'messages' => [
                 'not_found' => '',
@@ -261,7 +264,7 @@ class Products extends Users
                 LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
                 LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
                 LEFT JOIN {$this->table[$config['details_table']]} dt ON p.id = dt.product_id
-                WHERE p.slug = ? {$config['additional_where']}
+                WHERE p.slug = ? $additional_where
                 ORDER BY p.created_at DESC
                 LIMIT 1;
         ";

@@ -27,27 +27,22 @@ class Courses extends Products
 
     public function get_course_by_slug($params)
     {
-        $additional_where = $this->check_role(['admin'], false) === false
-            ? " AND p.status = 'verified' AND p.instructor_active = 1 "
-            : '';
-
         $this->get_product_by_slug($params, [
             'details_table' => 'course_details',
             'select_fields' => "
-            dt.access_type,
-            dt.duration,
-            dt.all_lessons_count,
-            (
-                SELECT COUNT(*)
-                FROM {$this->table['chapter_lessons']} cl
-                INNER JOIN {$this->table['chapters']} c ON cl.chapter_id = c.id
-                WHERE c.product_id = p.id AND cl.link IS NOT NULL
-            ) AS record_progress,
-            dt.online_price,
-            dt.online_discount_amount
-        ",
+                dt.access_type,
+                dt.duration,
+                dt.all_lessons_count,
+                (
+                    SELECT COUNT(*)
+                    FROM {$this->table['chapter_lessons']} cl
+                    INNER JOIN {$this->table['chapters']} c ON cl.chapter_id = c.id
+                    WHERE c.product_id = p.id AND cl.link IS NOT NULL
+                ) AS record_progress,
+                dt.online_price,
+                dt.online_discount_amount
+            ",
             'instructor_stats_field' => 'courses_taught',
-            'additional_where' => $additional_where,
             'special_processing' => null,
             'messages' => [
                 'not_found' => 'دوره ای یافت نشد',
