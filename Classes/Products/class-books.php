@@ -71,7 +71,7 @@ class Books extends Products
                     p.level,
                     o.uuid AS order_uuid,
                     oi.uuid AS item_uuid,
-                    oi.status,
+                    oi.status AS order_status,
                     oi.access_type,
                     oi.updated_at
                 FROM {$this->table['order_items']} oi

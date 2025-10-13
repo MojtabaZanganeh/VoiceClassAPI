@@ -68,7 +68,7 @@ class Courses extends Products
                     o.uuid AS order_uuid,
                     oi.uuid AS item_uuid,
                     oi.access_type,
-                    oi.status,
+                    oi.status AS order_status,
                     oi.updated_at
                 FROM {$this->table['orders']} o
                 LEFT JOIN {$this->table['order_items']} oi ON o.id = oi.order_id
