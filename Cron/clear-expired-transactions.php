@@ -3,10 +3,12 @@
 $init = require __DIR__ . '/cron-runner.php';
 $db = $init['db'];
 $time = $init['time'];
+$cron_time = $init['cron_times']['clear-expired-transactions'];
 $start_time = $init['start_time'];
-$log_file = 'get_product_stats.log';
+$log_file = 'clear-expired-transactions.log';
+$log_message = 'Clear expired transactions successfully';
 
-if ($time !== '00:00')
+if ($time !== $cron_time)
     exit;
 
 try {
@@ -70,10 +72,6 @@ try {
             }
         }
     }
-
-    $log_file = 'get_product_stats.log';
-    $log_message = 'Product stats updated successfully';
-
 } catch (Exception $e) {
     $db->rollback();
     error_log("[" . jdate('Y-m-d H:i:s') . "] " . $e->getMessage());

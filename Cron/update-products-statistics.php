@@ -3,9 +3,12 @@
 $init = require __DIR__ . '/cron-runner.php';
 $db = $init['db'];
 $time = $init['time'];
+$cron_time = $init['cron_times']['update-products-statistics'];
 $start_time = $init['start_time'];
+$log_file = 'update-products-statistics.log';
+$log_message = 'Product stats updated successfully';
 
-if ($time !== '00:10') 
+if ($time !== $cron_time)
     exit;
 
 try {
@@ -72,10 +75,6 @@ try {
     if (!$update_rating) {
         throw new Exception('Failed to update product ratings');
     }
-    
-    $log_file = 'get_product_stats.log';
-    $log_message = 'Product stats updated successfully';
-
 } catch (Exception $e) {
     $db->rollback();
     error_log("[" . jdate('Y-m-d H:i:s') . "] " . $e->getMessage());

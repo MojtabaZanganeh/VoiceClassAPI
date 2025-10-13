@@ -19,5 +19,10 @@ $db->beginTransaction();
 return [
     'db' => $db,
     'time' => $time,
+    'cron_times' => [
+        'clear-expired-transactions' => '00:00',
+        'update-products-statistics' => '00:00',
+        'update-instructors-statistics' => '00:00'
+    ],
     'start_time' => $start_time
 ];
