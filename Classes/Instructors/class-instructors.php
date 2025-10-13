@@ -49,6 +49,7 @@ class Instructors extends Users
 
             $user_id = $user['id'];
             $full_name = $user['first_name'] . ' ' . $user['last_name'];
+            $phone = $user['phone'];
         } else {
             $first_name = $this->check_input($params['first_name'], 'fa_name', 'نام');
             $last_name = $this->check_input($params['last_name'], 'fa_name', 'نام خانوادگی');
@@ -167,7 +168,16 @@ class Instructors extends Users
 
         $db->commit();
 
-        Response::success('مدرس افزوده شد');
+        $send_sms_result = $this->send_sms(
+            $phone,
+            $_ENV["ADD_INSTRUCTOR_TEMPLATE_ID"],
+            [
+                ['name' => 'username', 'value' => $phone],
+                ['name' => 'password', 'value' => $password]
+            ]
+        );
+
+        Response::success('مدرس افزوده شد' . ($send_sms_result ? '' : ' اما پیامک ارسال نشد'));
     }
 
     public function update_instructor_info($params)

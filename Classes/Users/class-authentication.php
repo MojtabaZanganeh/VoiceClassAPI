@@ -54,25 +54,7 @@ class Authentication extends Database
             }
         }
 
-        switch ($page) {
-            case 'register':
-            case 'login':
-                $code_length = 5;
-                $sms_pattern = '245189';
-                break;
-
-            case 'delete profile':
-                $code_length = 10;
-                $sms_pattern = '249221';
-                break;
-
-            default:
-                $code_length = 5;
-                $sms_pattern = '245189';
-                break;
-        }
-
-        $rand_code = ($send_sms) ? $this->get_random('int', $code_length) : '11111';
+        $rand_code = $send_sms ? $this->get_random('int', 5) : '11111';
 
         $expires_at = time() + $this->expires_time;
 
@@ -93,7 +75,12 @@ class Authentication extends Database
         $result = $this->insertData($sql, $execute);
 
         if ($result) {
-            $send_result = $this->send_sms($phone, $rand_code, $sms_pattern, $send_sms);
+            $send_result = $this->send_sms(
+                $phone,
+                $_ENV["SEND_CODE_TEMPLATE_ID"],
+                [['name' => 'code', 'value' => $rand_code]],
+                $send_sms
+            );
             if ($send_result === true) {
                 $this->commit();
                 Response::success('کد تایید ارسال شد');

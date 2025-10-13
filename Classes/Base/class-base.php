@@ -215,35 +215,17 @@ trait Base
      * @param bool $send_sms Flag to determine whether the SMS should be sent.
      * @return string The result of the SMS sending process.
      */
-    public static function send_sms($phone_number, $code, $pattern, $send_sms = true)
+    public static function send_sms(string $phone_number, int $pattern, array $variables, bool $send_sms = true)
     {
 
         if (!$send_sms) {
             return true;
         }
 
-        // Meli Payamak
-        // ini_set("soap.wsdl_cache_enabled", "0");
-        // $sms = new \SoapClient("http://api.payamak-panel.com/post/Send.asmx?wsdl", array("encoding" => "UTF-8"));
-        // $data = array(
-        //     "username" => "9155105404",
-        //     "password" => "HPYZ3",
-        //     "text" => $params,
-        //     "to" => $phone_number,
-        //     "bodyId" => $pattern
-        // );
-
-        // $send_result = ($send_sms) ? $sms->SendByBaseNumber($data)->SendByBaseNumberResult : '65461456145146531456';
-
         $payload = [
             "mobile" => $phone_number,
-            "templateId" => (int) $_ENV["SEND_SMS_TEMPLATE_ID"],
-            "parameters" => [
-                [
-                    "name" => "code",
-                    "value" => $code
-                ]
-            ]
+            "templateId" => $pattern,
+            "parameters" => $variables
         ];
 
         $curl = curl_init();
@@ -270,7 +252,7 @@ trait Base
 
         $result = json_decode($response, true);
 
-        return $result['status'] === 1 ? true : false;
+        return isset($result['status']) && $result['status'] === 1 ? true : false;
     }
 
     /**
