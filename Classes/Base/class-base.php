@@ -252,7 +252,12 @@ trait Base
 
         $result = json_decode($response, true);
 
-        return isset($result['status']) && $result['status'] === 1 ? true : false;
+        if (!isset($result['status']) || $result['status'] !== 1) {
+            Error::log("sms-result-$phone_number", [$result, $payload]);
+            return false;
+        }
+
+        return true;
     }
 
     /**

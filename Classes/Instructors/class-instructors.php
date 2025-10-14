@@ -66,7 +66,7 @@ class Instructors extends Users
                 Response::error('ایمیل قبلاً ثبت شده است.', null, 400, $db);
             }
 
-            if (!$_FILES['avatar']) {
+            if (empty($_FILES['avatar'])) {
                 Response::error('پروفایل ارسال نشده است', null, 400, $db);
             }
             $avatar = $this->handle_file_upload($_FILES['avatar'], 'Uploads/Avatars/');
@@ -76,7 +76,8 @@ class Instructors extends Users
 
             $user_uuid = $this->generate_uuid();
             $username = $phone ? "user-$phone" : "guest_user";
-            $password = password_hash($this->get_random('pass', 12), PASSWORD_DEFAULT);
+            $password = $this->get_random('pass', 12);
+            $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
             $user_id = $db->insertData(
                 "INSERT INTO {$db->table['users']} 
@@ -87,7 +88,7 @@ class Instructors extends Users
                     $username,
                     $phone,
                     $email,
-                    $password,
+                    $password_hash,
                     'user',
                     $avatar,
                     true,
