@@ -15,7 +15,7 @@ try {
     $log_message ??= 'Cron completed';
 
     file_put_contents(
-        __DIR__ . "/../logs/{$log_file}",
+        __DIR__ . "/../Logs/{$log_file}",
         "[{$date_time}] {$log_message} in " . (time() - $start_time) . " seconds\n",
         FILE_APPEND
     );
