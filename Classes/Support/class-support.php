@@ -2,10 +2,12 @@
 namespace Classes\Support;
 
 use Classes\Base\Base;
+use Classes\Base\Database;
 use Classes\Base\Error;
 use Classes\Base\Response;
 use Classes\Base\Sanitizer;
 use Classes\Users\Users;
+use Exception;
 
 class Support extends Users
 {
@@ -132,8 +134,24 @@ class Support extends Users
 
         $this->check_params($params, ['request_uuid', 'status']);
 
-        $update_transaction = $this->updateData(
-            "UPDATE {$this->table['join_us_requests']} SET `status` = ? WHERE uuid = ?",
+        $request = $this->getData(
+            "SELECT `name`, `email`, `status` FROM {$this->table['join_us_requests']} WHERE uuid = ?",
+            [$params['request_uuid']]
+        );
+
+        if (empty($request)) {
+            Response::error('درخواست یافت نشد');
+        }
+
+        if ($request['status'] === 'approved') {
+            Response::error('درخواست قبلاً تایید شده است و امکان تغییر وجود ندارد');
+        }
+
+        $db = new Database();
+        $db->beginTransaction();
+
+        $update_transaction = $db->updateData(
+            "UPDATE {$db->table['join_us_requests']} SET `status` = ? WHERE uuid = ?",
             [
                 $params['status'],
                 $params['request_uuid']
@@ -144,6 +162,39 @@ class Support extends Users
             Response::error('خطا در تغییر وضعیت درخواست همکاری');
         }
 
+        if ($params['status'] === 'approved') {
+
+            $userName = $request['name'];
+            $userEmail = $request['email'];
+
+            try {
+                $templateId = (int) $_ENV['SENDPULSE_TEMPLATE_ID'];
+                if (empty($templateId)) {
+                    throw new Exception('خطا در دریافت اطلاعات');
+                }
+
+                $result = $this->send_email(
+                    $userEmail,
+                    $userName,
+                    'قرارداد همکاری در آکادمی وویس کلاس',
+                    null,
+                    null,
+                    ['قرارداد.docx' => '/../../Data/contract.docx'],
+                    $templateId,
+                    ["current_year" => 2025]
+                );
+
+                if ($result !== true) {
+                    throw new Exception('ارسال ایمیل قرارداد موفقیت آمیز نبود');
+                }
+
+            } catch (Exception $e) {
+                $db->rollback();
+                Response::error($e->getMessage());
+            }
+        }
+
+        $db->commit();
         Response::success('وضعیت درخواست همکاری به روز شد');
     }
 }

@@ -1,11 +1,15 @@
 <?php
 namespace Classes\Base;
 
+use Exception;
 use Ramsey\Uuid\Uuid;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Logo\Logo;
+use Sendpulse\RestApi\ApiClient;
+use Sendpulse\RestApi\ApiClientException;
+use Sendpulse\RestApi\Storage\FileStorage;
 
 /**
  * Base Trait
@@ -258,6 +262,112 @@ trait Base
         }
 
         return true;
+    }
+
+    public function send_email(
+        string $toEmail,
+        string $toName,
+        string $subject,
+        ?string $html = null,
+        ?string $text = null,
+        array $attachments = [],
+        ?int $templateId = null,
+        array $templateVariables = []
+    ): bool {
+        $clientId = $_ENV['SENDPULSE_CLIENT_ID'];
+        $clientSecret = $_ENV['SENDPULSE_CLIENT_SECRET'];
+        $fromEmail = $_ENV['SENDPULSE_FROM_EMAIL'];
+        $fromName = $_ENV['SENDPULSE_FROM_NAME'];
+
+        if (empty($clientId) || empty($clientSecret) || empty($fromEmail) || empty($fromName)) {
+            throw new Exception('خطا در دریافت اطلاعات تنظیمات');
+        }
+
+        if ($templateId) {
+            $html = null;
+            $text = null;
+        } elseif (is_null($text) && !is_null($html)) {
+            $text = strip_tags(preg_replace('/<br\s*\/?>/i', "\n", $html));
+        }
+
+        $attachmentsBinary = [];
+        foreach ($attachments as $fileName => $filePath) {
+            $fullPath = __DIR__ . $filePath;
+            if (file_exists($fullPath)) {
+                $attachmentsBinary[$fileName] = base64_encode(file_get_contents($fullPath));
+            } else {
+                throw new Exception("فایل پیوست {$filePath} در پوشه Data یافت نشد.");
+            }
+        }
+
+        try {
+            $apiClient = new ApiClient(
+                $clientId,
+                $clientSecret,
+                new FileStorage()
+            );
+
+            $emailData = [
+                'email' => [
+                    'subject' => $subject,
+                    'from' => [
+                        'name' => $fromName,
+                        'email' => $fromEmail,
+                    ],
+                    'to' => [
+                        [
+                            'name' => $toName,
+                            'email' => $toEmail,
+                        ]
+                    ]
+                ]
+            ];
+
+            if ($templateId) {
+                $emailData['email']['template'] = [
+                    'id' => $templateId,
+                    'variables' => $templateVariables
+                ];
+            } else {
+                if (!is_null($html)) {
+                    $emailData['email']['html'] = base64_encode($html);
+                }
+                if (!is_null($text)) {
+                    $emailData['email']['text'] = $text;
+                }
+            }
+
+            if (!empty($attachmentsBinary)) {
+                $emailData['email']['attachments_binary'] = $attachmentsBinary;
+            }
+
+            $response = $apiClient->post('smtp/emails', $emailData);
+
+            if (empty($response) || !isset($response['result']) || $response['result'] !== true) {
+                Error::log("email-result-$toEmail", [$response]);
+                throw new Exception('پاسخ نامعتبر از سرویس ارسال ایمیل دریافت شد');
+            }
+
+            return true;
+        } catch (ApiClientException $e) {
+            throw new Exception('خطا در ارسال ایمیل: ' . $e->getMessage());
+        } catch (Exception $e) {
+            Error::log(
+                "email-$toEmail",
+                [
+                    'toEmail' => $toEmail,
+                    'toName' => $toName,
+                    'subject' => $subject,
+                    'html' => $html,
+                    'text' => $text,
+                    'attachments' => $attachments,
+                    'templateId' => $templateId,
+                    'templateVariables' => $templateVariables,
+                    'message' => $e->getMessage()
+                ]
+            );
+            throw $e;
+        }
     }
 
     /**

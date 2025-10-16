@@ -6,6 +6,7 @@
         "endroid/qr-code": "^5.1",
         "pusher/pusher-php-server": "^7.2",
         "setasign/fpdi": "^2.6",
-        "setasign/fpdf": "^1.8"
+        "setasign/fpdf": "^1.8",
+        "sendpulse/rest-api": "^2.0"
     }
 }
