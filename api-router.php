@@ -69,3 +69,5 @@ $router->add('/support/join-us-request', 'POST', 'Classes\Support\Support', 'joi
 $router->add('/support/get-all-join-us-requests', 'GET', 'Classes\Support\Support', 'get_all_join_us_requests');
 $router->add('/support/update-join-us-request-status', 'POST', 'Classes\Support\Support', 'update_join_us_request_status');
 $router->add('/support/get-user-tickets', 'GET', 'Classes\Support\Tickets', 'get_user_tickets');
+$router->add('/support/emails/get-all', 'GET', 'Classes\Support\Emails', 'get_sent_emails');
+$router->add('/support/emails/send-email', 'POST', 'Classes\Support\Emails', 'send_email_manually'); 
