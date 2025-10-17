@@ -6,6 +6,8 @@ use Classes\Base\Error;
 use Classes\Users\Users;
 use Classes\Base\Response;
 use Classes\Base\Sanitizer;
+use DateTime;
+use DateTimeZone;
 use Exception;
 use Sendpulse\RestApi\ApiClient;
 use Sendpulse\RestApi\ApiClientException;
@@ -66,14 +68,28 @@ class Emails extends Support
                 }
             }
 
-            $response = $apiClient->get('smtp/emails', $filters);
+            $emails = $apiClient->get('smtp/emails', $filters);
+
+            if (!$emails) {
+                Response::success('ایمیلی یافت نشد', [
+                    'emails' => [],
+                    'total' => 0,
+                    'total_pages' => 1
+                ]);
+            }
+
+            foreach ($emails as &$email) {
+                $date_obj = new DateTime($email['send_date'], new DateTimeZone('UTC'));
+                $date_obj->setTimezone(new DateTimeZone('Asia/Tehran'));
+                $email['send_date'] = $date_obj->format('Y-m-d H:i:s');
+            }
 
             $total = $this->get_total_sent_emails($filters);
 
             $totalPages = ceil($total / $limit);
 
             Response::success('لیست ایمیل های ارسالی دریافت شد', 'emailsData', [
-                'emails' => $response,
+                'emails' => $emails,
                 'total' => $total,
                 'total_pages' => $totalPages
             ]);
