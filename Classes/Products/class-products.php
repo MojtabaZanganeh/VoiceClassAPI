@@ -37,43 +37,28 @@ class Products extends Users
             : 12;
 
         $role = $params['role'] ?? null;
-        $return_stats = false;
         $status_column = '';
+        $status_where_condition = '';
+        $status_bindParams = '';
         if ($role && in_array($role, ['admin', 'instructor'])) {
             if ($role === 'admin') {
                 $admin = $this->check_role(['admin']);
                 $where_condition = '';
                 $bindParams = [];
             } elseif ($role === 'instructor') {
-                $instructor = $this->check_role(['instructor', 'admin']);
+                $instructor_user = $this->check_role(['instructor', 'admin']);
                 $instructor_obj = new Instructors();
-                $instructor = $instructor_obj->get_instructor_by_user_id($instructor['id']);
+                $instructor = $instructor_obj->get_instructor_by_user_id($instructor_user['id']);
                 $where_condition = " AND p.instructor_id = ? ";
                 $bindParams = [$instructor['id']];
             }
 
-            $return_stats = true;
-            $instructor_where = $role === 'instructor' ? ' AND instructor_id = ?' : '';
-            $instructor_bindParams = $role === 'instructor' ? [$type, $instructor['id']] : [$type];
-            $statsSql = "SELECT 
-                            COUNT(*) as total,
-                            SUM(CASE WHEN status = 'not-completed' THEN 1 ELSE 0 END) as not_completed,
-                            SUM(CASE WHEN status = 'need-approval' THEN 1 ELSE 0 END) as need_approval,
-                            SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) as verified,
-                            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
-                            SUM(CASE WHEN status = 'deleted' THEN 1 ELSE 0 END) as deleted,
-                            SUM(CASE WHEN status = 'admin-deleted' THEN 1 ELSE 0 END) as admin_deleted
-                        FROM {$this->table['products']}
-                            WHERE `type` = ? $instructor_where";
-
-            $stats = $this->getData($statsSql, $instructor_bindParams);
-
             $status_column = ' p.status, p.instructor_active, ';
 
             $status_filter = $params['status'] ?? null;
-            if (!empty($params['status']) || in_array($status_filter, ['not-completed', 'need-approval', 'verified', 'rejected', 'deleted', 'admin-deleted'])) {
-                $where_condition .= " AND p.status = ?";
-                $bindParams[] = $status_filter;
+            if (!empty($status_filter) && in_array($status_filter, ['not-completed', 'need-approval', 'verified', 'rejected', 'deleted', 'admin-deleted'])) {
+                $status_where_condition = " AND p.status = ?";
+                $status_bindParams = $status_filter;
             }
         } else {
             $where_condition = " AND p.status = 'verified' AND p.instructor_active = 1 ";
@@ -109,6 +94,31 @@ class Products extends Users
             default => 'p.created_at DESC',
         };
 
+        array_unshift($bindParams, $type);
+
+        if ($role === 'instructor') {
+            $instructor = $instructor_obj->get_instructor_by_user_id($instructor_user['id']);
+            $where_condition .= ' AND instructor_id = ?';
+            $bindParams[] = $instructor['id'];
+        }
+
+        $statsSql = "SELECT 
+                            COUNT(*) as total,
+                            SUM(CASE WHEN status = 'not-completed' THEN 1 ELSE 0 END) as not_completed,
+                            SUM(CASE WHEN status = 'need-approval' THEN 1 ELSE 0 END) as need_approval,
+                            SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) as verified,
+                            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
+                            SUM(CASE WHEN status = 'deleted' THEN 1 ELSE 0 END) as deleted,
+                            SUM(CASE WHEN status = 'admin-deleted' THEN 1 ELSE 0 END) as admin_deleted
+                        FROM {$this->table['products']} p
+                            WHERE `type` = ? $where_condition";
+
+        $stats = $this->getData($statsSql, $bindParams);
+
+        if ($status_bindParams !== '') {
+            array_push($bindParams, $status_bindParams);
+        }
+
         $offset = ($current_page - 1) * $per_page_count;
         $bindParams[] = $per_page_count;
         $bindParams[] = $offset;
@@ -140,28 +150,24 @@ class Products extends Users
                 LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
                 LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
                 LEFT JOIN {$this->table[$details_table]} dt ON p.id = dt.product_id
-                    WHERE p.type = ? $where_condition
+                    WHERE p.type = ? $where_condition $status_where_condition
                 GROUP BY p.id
                 ORDER BY $sort_condition
                 LIMIT ? OFFSET ?
         ";
 
-        array_unshift($bindParams, $type);
-
         $results = $this->getData($sql, $bindParams, true);
 
+        $total_pages = ceil($stats['total'] / $per_page_count);
+
+        Error::log('courses', [$results, $total_pages, $stats]);
+
         if (!$results) {
-            if ($return_stats === true) {
-                $data_name = 'productsData';
-                $data_value = [
-                    $type . 's' => [],
-                    'stats' => $stats
-                ];
-            } else {
-                $data_name = $response_key;
-                $data_value = [];
-            }
-            Response::success($not_found_message, $data_name, $data_value);
+            Response::success($not_found_message, 'productsData', [
+                $type . 's' => [],
+                'stats' => $stats,
+                'total_pages' => 1
+            ]);
         }
 
         foreach ($results as &$item) {
@@ -170,17 +176,11 @@ class Products extends Users
             $item['instructor']['avatar'] = $this->get_full_image_url($item['instructor']['avatar']);
         }
 
-        if ($return_stats === true) {
-            $data_name = 'productsData';
-            $data_value = [
-                $type . 's' => $results,
-                'stats' => $stats
-            ];
-        } else {
-            $data_name = $response_key;
-            $data_value = $results;
-        }
-        Response::success($success_message, $data_name, $data_value);
+        Response::success($success_message, 'productsData', [
+            $type . 's' => $results,
+            'stats' => $stats,
+            'total_pages' => $total_pages
+        ]);
     }
 
     private function get_slug_by_uuid(string $product_uuid)
