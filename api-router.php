@@ -71,3 +71,4 @@ $router->add('/support/update-join-us-request-status', 'POST', 'Classes\Support\
 $router->add('/support/get-user-tickets', 'GET', 'Classes\Support\Tickets', 'get_user_tickets');
 $router->add('/support/emails/get-all', 'GET', 'Classes\Support\Emails', 'get_sent_emails');
 $router->add('/support/emails/send-email', 'POST', 'Classes\Support\Emails', 'send_email_manually'); 
+$router->add('/support/stats/get-stats', 'GET', 'Classes\Support\Stats', 'get_stats'); 

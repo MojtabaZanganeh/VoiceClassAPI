@@ -145,7 +145,7 @@ class Orders extends Carts
         }
     }
 
-    protected function get_order_items($order_id)
+    public function get_order_items($order_id)
     {
         $sql = "SELECT
                     oi.uuid,
