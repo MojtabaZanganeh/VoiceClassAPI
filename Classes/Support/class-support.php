@@ -57,6 +57,26 @@ class Support extends Users
             Response::error('خطا در ثبت درخواست همکاری');
         }
 
+        $this->send_email(
+            $_ENV['ADMIN_MAIL'],
+            'مدیریت محترم',
+            'درخواست همکاری در آکادمی وویس کلاس',
+            null,
+            null,
+            [],
+            $_ENV['SENDPULSE_NEW_JOIN_US_REQUEST_TEMPLATE_ID'],
+            [
+                "full_name" => $full_name,
+                "phone" => $phone,
+                "email" => $email,
+                "demo_course_link" => $demo_course_link,
+                "demo_course_link_text" => 'مشاهده نمونه تدریس',
+                "demo_book_link" => $demo_book_link ?? '',
+                "demo_book_link_text" => $demo_book_link ? 'مشاهده نمونه جزوه' : 'نمونه جزوه ارسال نشده است',
+                "resume" => $resume
+            ]
+        );
+
         Response::success('درخواست همکاری ثبت شد');
     }
 
@@ -122,7 +142,7 @@ class Support extends Users
             ]);
         }
 
-        Response::success('درخواستی یافت نشد', 'requestsData', [
+        Response::success('درخواست ها دریافت شد', 'requestsData', [
             'requests' => $requests,
             'stats' => $stats
         ]);
@@ -185,7 +205,7 @@ class Support extends Users
                 );
 
                 if ($result !== true) {
-                    throw new Exception('ارسال ایمیل قرارداد موفقیت آمیز نبود');
+                    throw new Exception('ارسال ایمیل قرارداد انجام نشد');
                 }
 
             } catch (Exception $e) {

@@ -22,6 +22,7 @@ class Transactions extends Orders
         $method = $params['method'];
         $order_uuid = $params['order_id'];
 
+        $attachments = [];
         if ($params['method'] === 'receipt') {
             $this->check_params($params, ['file_name', 'file_type', 'file_size']);
 
@@ -36,6 +37,8 @@ class Transactions extends Orders
             if (!$receipt_url) {
                 Response::error('خطا در ذخیره تصویر رسید');
             }
+
+            $attachments = [$_FILES['receipt']['name'] => "/../../$receipt_url"];
         } else {
             $this->check_params($params, ['lastFourDigits', 'referenceNumber']);
 
@@ -44,7 +47,14 @@ class Transactions extends Orders
         }
 
         $order = $this->getData(
-            "SELECT * FROM {$this->table['orders']} WHERE uuid = ?",
+            "SELECT 
+                    o.*, 
+                    u.phone, 
+                    CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS buyer_name 
+                FROM {$this->table['orders']} o  
+                INNER JOIN {$this->table['users']} u ON o.user_id = u.id  
+                INNER JOIN {$this->table['user_profiles']} up ON o.user_id = up.user_id  
+                WHERE o.uuid = ?",
             [$order_uuid]
         );
 
@@ -70,6 +80,32 @@ class Transactions extends Orders
         if (!$update_transaction) {
             Response::error('خطا در ثبت اطلاعات پرداخت');
         }
+
+        $purchase_time = jdate("Y/m/d H:i", '', '', 'Asia/Tehran', 'en');
+
+        $total_amount = $order['total_amount'];
+        $discount_amount = $order['discount_amount'] ?? 0;
+        $paid_amount = $total_amount - $discount_amount;
+
+        $this->send_email(
+            $_ENV['TECHNICAL_SUPPORT_MAIL'],
+            'مدیریت محترم',
+            'درخواست همکاری در آکادمی وویس کلاس',
+            null,
+            null,
+            $attachments,
+            $_ENV['SENDPULSE_NEW_TRANSACTION_TEMPLATE_ID'],
+            [
+                "buyer_name" => $order['buyer_name'],
+                "phone_number" => $order['phone'],
+                "purchase_time" => $purchase_time,
+                "order_amount" => number_format($total_amount),
+                "discount_amount" => number_format($discount_amount),
+                "paid_amount" => number_format($paid_amount),
+                "tracking_code" => $ref_id ?? '',
+                "last_four_digits" => $card_pan ?? '',
+            ]
+        );
 
         Response::success('اطلاعات پرداخت ثبت شد');
     }
@@ -354,8 +390,7 @@ class Transactions extends Orders
                                     WHERE id = ?",
                             [$current_time, $earning['id']]
                         );
-                    }
-                    elseif ($earning['status'] !== 'paid' && $new_status !== 'paid') {
+                    } elseif ($earning['status'] !== 'paid' && $new_status !== 'paid') {
                         $update_instructor_earning = $db->updateData(
                             "UPDATE {$db->table['instructor_earnings']}
                                         SET status = 'canceled', updated_at = ?
