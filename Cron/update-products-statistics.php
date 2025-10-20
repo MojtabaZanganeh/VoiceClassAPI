@@ -1,84 +1,78 @@
 <?php
+require_once __DIR__ . '/cron-require.php';
 
-$init = require __DIR__ . '/cron-runner.php';
-$db = $init['db'];
-$time = $init['time'];
-$cron_time = $init['cron_times']['update-products-statistics'];
-$start_time = $init['start_time'];
-$log_file = 'update-products-statistics.log';
-$log_message = 'Product stats updated successfully';
+use Classes\Base\Cron;
 
-if ($time !== $cron_time)
-    exit;
+class UpdateProductStatsCron extends Cron
+{
+    protected function run(): void
+    {
+        if ($this->currentTime !== $this->cronTimes['update-products-statistics']) {
+            self::log($this->logFile, "Skipped: time mismatch (current={$this->currentTime}, expected={$this->cronTimes['update-products-statistics']})");
+            return;
+        }
 
-try {
-    $products = $db->getData("
-        SELECT 
-            oi.product_id,
-            COUNT(oi.id) AS total_students
-        FROM {$db->table['order_items']} oi
-        WHERE oi.status IN ('completed', 'sending')
-        GROUP BY oi.product_id
-    ", [], true);
+        $this->logMessage = 'Product stats updated successfully';
 
-    if ($products && count($products) > 0) {
+        $products = $this->db->getData("
+            SELECT 
+                oi.product_id,
+                COUNT(oi.id) AS total_students
+            FROM {$this->db->table['order_items']} oi
+            WHERE oi.status IN ('completed', 'sending')
+            GROUP BY oi.product_id
+        ", [], true) ?? [];
+
         foreach ($products as $row) {
-            $db->updateData(
-                "UPDATE {$db->table['products']} SET students = ? WHERE id = ?",
-                [$row['total_students'], $row['product_id']]
+            $this->db->updateData(
+                "UPDATE {$this->db->table['products']} SET students = ? WHERE id = ?",
+                [(int) $row['total_students'], (int) $row['product_id']]
             );
         }
-    }
 
-    $update_students = $db->updateData("
-        UPDATE {$db->table['products']}
-        SET students = 0
-        WHERE id NOT IN (
-            SELECT DISTINCT product_id
-            FROM {$db->table['order_items']}
-            WHERE status IN ('completed', 'sending')
-        )
-    ", []);
+        $okStudents = $this->db->updateData("
+            UPDATE {$this->db->table['products']}
+            SET students = 0
+            WHERE id NOT IN (
+                SELECT DISTINCT product_id
+                FROM {$this->db->table['order_items']}
+                WHERE status IN ('completed', 'sending')
+            )
+        ", []);
+        if (!$okStudents) {
+            throw new Exception('Failed to update product students');
+        }
 
-    if (!$update_students) {
-        throw new Exception('Failed to update product students');
-    }
+        $ratings = $this->db->getData("
+            SELECT 
+                r.product_id,
+                ROUND(AVG(r.rating), 2) AS avg_rating,
+                COUNT(r.id) AS total_ratings
+            FROM {$this->db->table['reviews']} r
+            GROUP BY r.product_id
+        ", [], true) ?? [];
 
-    $ratings = $db->getData("
-        SELECT 
-            r.product_id,
-            ROUND(AVG(r.rating), 2) AS avg_rating,
-            COUNT(r.id) AS total_ratings
-        FROM {$db->table['reviews']} r
-        GROUP BY r.product_id
-    ", [], true);
-
-    if ($ratings && count($ratings) > 0) {
         foreach ($ratings as $rate) {
-            $db->updateData(
-                "UPDATE {$db->table['products']} 
+            $this->db->updateData(
+                "UPDATE {$this->db->table['products']} 
                  SET rating_avg = ?, rating_count = ?
                  WHERE id = ?",
-                [$rate['avg_rating'], $rate['total_ratings'], $rate['product_id']]
+                [(float) $rate['avg_rating'], (int) $rate['total_ratings'], (int) $rate['product_id']]
             );
         }
-    }
 
-    $update_rating = $db->updateData("
-        UPDATE {$db->table['products']}
-        SET rating_avg = 0, rating_count = 0
-        WHERE id NOT IN (
-            SELECT DISTINCT product_id FROM {$db->table['reviews']}
-        )
-    ", []);
-
-    if (!$update_rating) {
-        throw new Exception('Failed to update product ratings');
+        $okRatings = $this->db->updateData("
+            UPDATE {$this->db->table['products']}
+            SET rating_avg = 0, rating_count = 0
+            WHERE id NOT IN (
+                SELECT DISTINCT product_id FROM {$this->db->table['reviews']}
+            )
+        ", []);
+        if (!$okRatings) {
+            throw new Exception('Failed to update product ratings');
+        }
     }
-} catch (Exception $e) {
-    $db->rollback();
-    error_log("[" . jdate('Y-m-d H:i:s') . "] " . $e->getMessage());
-    exit;
 }
 
-require __DIR__ . '/cron-finish.php';
+$cron = new UpdateProductStatsCron('update-products-statistics.log', 'بروزرسانی آمار محصولات');
+$cron->execute();

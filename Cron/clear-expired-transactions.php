@@ -1,81 +1,64 @@
 <?php
+require_once __DIR__ . '/cron-require.php';
 
-$init = require __DIR__ . '/cron-runner.php';
-$db = $init['db'];
-$time = $init['time'];
-$cron_time = $init['cron_times']['clear-expired-transactions'];
-$start_time = $init['start_time'];
-$log_file = 'clear-expired-transactions.log';
-$log_message = 'Clear expired transactions successfully';
+use Classes\Base\Cron;
 
-if ($time !== $cron_time)
-    exit;
-
-try {
-    $expired_transactions = $db->getData(
-        "SELECT id FROM {$db->table['transactions']}
-                WHERE `status` = 'pending-pay'
-                AND updated_at < (NOW() - INTERVAL 24 HOUR)
-            ",
-        [],
-        true
-    );
-
-    if (!$expired_transactions) {
-        $log_message = 'No expired orders';
-        require __DIR__ . '/cron-finish.php';
-        exit;
-    }
-
-    foreach ($expired_transactions as $transaction) {
-        $update_transaction = $db->updateData(
-            "UPDATE {$db->table['transactions']} SET `status` = ? WHERE id = ?",
-            [
-                'canceled',
-                $transaction['id']
-            ]
-        );
-
-        if (!$update_transaction) {
-            throw new Exception('Failed to change transaction status');
+class ClearExpiredTransactionsCron extends Cron
+{
+    protected function run(): void
+    {
+        if ($this->currentTime !== $this->cronTimes['clear-expired-transactions']) {
+            self::log($this->logFile, "Skipped: time mismatch (current={$this->currentTime}, expected={$this->cronTimes['clear-expired-transactions']})");
+            return;
         }
 
-        $order = $db->getData(
-            "SELECT order_id FROM {$db->table['transactions']} WHERE id = ?",
-            [
-                $transaction['id']
-            ]
-        );
+        $this->logMessage = 'Clear expired transactions successfully';
 
-        if (!$order) {
-            throw new Exception('Failed to get transaction order');
+        $expired = $this->db->getData("
+            SELECT id FROM {$this->db->table['transactions']}
+            WHERE `status` = 'pending-pay'
+            AND updated_at < (NOW() - INTERVAL 24 HOUR)
+        ", [], true);
+
+        if (!$expired) {
+            $this->logMessage = 'No expired orders';
+            return;
         }
 
-        $items = $db->getData(
-            "SELECT id, product_id, access_type, price, `status` FROM {$db->table['order_items']} WHERE order_id = ?",
-            [$order['order_id']],
-            true
-        );
-
-        if (!$items) {
-            throw new Exception('Not found item for order');
-        }
-
-        foreach ($items as $item) {
-            $update_item_status = $db->updateData(
-                "UPDATE {$db->table['order_items']} SET `status` = ? WHERE id = ?",
-                ['canceled', $item['id']]
+        foreach ($expired as $transaction) {
+            $ok = $this->db->updateData(
+                "UPDATE {$this->db->table['transactions']} SET `status` = ? WHERE id = ?",
+                ['canceled', $transaction['id']]
             );
+            if (!$ok) {
+                throw new \Exception('Failed to change transaction status');
+            }
 
-            if ($update_item_status === false) {
-                throw new Exception('Failed to change order item status');
+            $order = $this->db->getData(
+                "SELECT order_id FROM {$this->db->table['transactions']} WHERE id = ?",
+                [$transaction['id']]
+            );
+            if (!$order) {
+                throw new \Exception('Failed to get transaction order');
+            }
+
+            $items = $this->db->getData(
+                "SELECT id FROM {$this->db->table['order_items']} WHERE order_id = ?",
+                [$order['order_id']],
+                true
+            );
+            foreach ($items ?? [] as $item) {
+                $ok = $this->db->updateData(
+                    "UPDATE {$this->db->table['order_items']} SET `status` = ? WHERE id = ?",
+                    ['canceled', $item['id']]
+                );
+                if ($ok === false) {
+                    throw new \Exception('Failed to change order item status');
+                }
             }
         }
     }
-} catch (Exception $e) {
-    $db->rollback();
-    error_log("[" . jdate('Y-m-d H:i:s') . "] " . $e->getMessage());
-    exit;
 }
 
-require __DIR__ . '/cron-finish.php';
+$cron = new ClearExpiredTransactionsCron('clear-expired-transactions.log', 'حذف تراکنش‌های منقضی شده');
+$cron->execute();

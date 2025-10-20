@@ -86,8 +86,6 @@ class Stats extends Support
         if ($last_transactions) {
             foreach ($last_transactions as &$transaction) {
                 $transaction['order'] = json_decode($transaction['order'], true);
-                $orders_obj = new Orders();
-                $transaction['order']['products'] = $orders_obj->get_order_items($transaction['order']['id']);
             }
         }
 
