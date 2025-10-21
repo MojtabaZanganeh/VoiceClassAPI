@@ -314,7 +314,7 @@ class Orders extends Carts
         ]);
     }
 
-    public function update_item_status($params)
+    public function update_item_status($params, bool $response = true, ?Database $db = null)
     {
         $admin = $this->check_role(['admin']);
 
@@ -322,11 +322,19 @@ class Orders extends Carts
 
         $new_status = $params['status'];
         if (!in_array($new_status, ['pending-pay', 'pending-review', 'sending', 'completed', 'rejected', 'canceled'])) {
-            Response::error('وضعیت جدید معتبر نیست');
+            if ($response) {
+                Response::error('وضعیت جدید معتبر نیست');
+            } else {
+                return false;
+            }
         }
 
-        $update_transaction = $this->updateData(
-            "UPDATE {$this->table['order_items']} SET `status` = ? WHERE uuid = ?",
+        if ($db === null) {
+            $db = new Database();
+        }
+
+        $update_transaction = $db->updateData(
+            "UPDATE {$db->table['order_items']} SET `status` = ? WHERE uuid = ?",
             [
                 $new_status,
                 $params['item_uuid']
@@ -334,9 +342,70 @@ class Orders extends Carts
         );
 
         if (!$update_transaction) {
-            Response::error('خطا در تغییر وضعیت سفارش');
+            if ($response) {
+                Response::error('خطا در تغییر وضعیت سفارش');
+            } else {
+                return false;
+            }
         }
 
-        Response::success('وضعیت سفارش به روز شد');
+        if ($new_status === 'pending-review') {
+            $order_sql = "SELECT
+                            o.code,
+                            o.created_at,
+                            u.phone,
+                            CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS buyer_name,
+                            p.title,
+                            oa.province,
+                            oa.city,
+                            oa.full_address,
+                            oa.postal_code,
+                            oa.receiver_name,
+                            oa.receiver_phone,
+                            oa.notes
+                        FROM {$db->table['order_items']} oi
+                        INNER JOIN {$db->table['orders']} o ON oi.order_id = o.id
+                        LEFT JOIN {$db->table['order_addresses']} oa ON oi.order_id = oa.order_id
+                        INNER JOIN {$db->table['products']} p ON oi.product_id = p.id
+                        INNER JOIN {$db->table['users']} u ON o.user_id = u.id
+                        LEFT JOIN {$db->table['user_profiles']} up ON o.user_id = up.user_id
+                        WHERE oi.uuid = ?
+                            ";
+            $order_data = $this->getData($order_sql, [$params['item_uuid']]);
+
+            if (!$order_data) {
+                Error::log('orderDate', [$order_data]);
+            }
+
+            $this->send_email(
+                $_ENV['ADMIN_MAIL'],
+                'مدیریت محترم',
+                'آماده سازی جزوه چاپی خریداری شده از آکادمی وویس کلاس',
+                null,
+                null,
+                [],
+                $_ENV['SENDPULSE_NEW_PRINTED_BOOK_ORDER_TEMPLATE_ID'],
+                [
+                    "buyer_name" => $order_data['buyer_name'] ?? 'ناشناس',
+                    "phone_number" => $order_data['phone'] ?? 'خطا در دریافت',
+                    "order_code" => $order_data['code'] ?? 'خطا در دریافت',
+                    "book_title" => $order_data['title'] ?? 'نامشخص',
+                    "order_time" => $order_data['created_at'] ?? jdate("Y/m/d H:i", '', '', 'Asia/Tehran', 'en'),
+                    "province" => $order_data['province'] ?? 'خطا در دریافت',
+                    "city" => $order_data['city'] ?? 'خطا در دریافت',
+                    "address" => $order_data['full_address'] ?? 'خطا در دریافت',
+                    "postal_code" => $order_data['postal_code'] ?? 'خطا در دریافت',
+                    "receiver_name" => $order_data['receiver_name'] ?? 'خطا در دریافت',
+                    "receiver_phone" => $order_data['receiver_phone'] ?? 'خطا در دریافت',
+                    "note" => $order_data['notes'] ?? 'یادداشتی ثبت نشده است'
+                ]
+            );
+        }
+
+        if ($response) {
+            Response::success('وضعیت سفارش به روز شد');
+        } else {
+            return true;
+        }
     }
 }

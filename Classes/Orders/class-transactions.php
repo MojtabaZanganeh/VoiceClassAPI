@@ -53,11 +53,11 @@ class Transactions extends Orders
                     CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS buyer_name 
                 FROM {$this->table['orders']} o  
                 INNER JOIN {$this->table['users']} u ON o.user_id = u.id  
-                INNER JOIN {$this->table['user_profiles']} up ON o.user_id = up.user_id  
+                LEFT JOIN {$this->table['user_profiles']} up ON o.user_id = up.user_id  
                 WHERE o.uuid = ?",
             [$order_uuid]
         );
-
+        
         if (!$order) {
             Response::error('سفارش یافت نشد');
         }
@@ -88,9 +88,9 @@ class Transactions extends Orders
         $paid_amount = $total_amount - $discount_amount;
 
         $this->send_email(
-            $_ENV['TECHNICAL_SUPPORT_MAIL'],
+            $_ENV['ADMIN_MAIL'],
             'مدیریت محترم',
-            'درخواست همکاری در آکادمی وویس کلاس',
+            'بررسی رسید پرداخت خرید از آکادمی وویس کلاس',
             null,
             null,
             $attachments,
@@ -313,7 +313,7 @@ class Transactions extends Orders
             }
 
             $items = $db->getData(
-                "SELECT id, product_id, access_type, price, `status` FROM {$db->table['order_items']} WHERE order_id = ?",
+                "SELECT id, uuid, product_id, access_type, price, `status` FROM {$db->table['order_items']} WHERE order_id = ?",
                 [$order['order_id']],
                 true
             );
@@ -347,12 +347,17 @@ class Transactions extends Orders
                         break;
                 }
 
-                $update_item_status = $db->updateData(
-                    "UPDATE {$db->table['order_items']} SET `status` = ? WHERE id = ?",
-                    [$item_status, $item['id']]
+                $update_item_status = $this->update_item_status(
+                    [
+                        'item_uuid' => $item['uuid'],
+                        'status' => $item_status,
+                        'access_type' => $item['access_type']
+                    ],
+                    false,
+                    $db
                 );
 
-                if ($update_item_status === false) {
+                if (!$update_item_status) {
                     throw new Exception('خطا در بروزرسانی وضعیت سفارش');
                 }
 

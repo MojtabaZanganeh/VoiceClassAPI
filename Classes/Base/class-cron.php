@@ -116,7 +116,6 @@ abstract class Cron
         $date = jdate('Y-m-d H:i:s', '', '', 'Asia/Tehran', 'en');
         $line = "[{$date}] {$message}\n";
         @file_put_contents(__DIR__ . "/../Logs/{$logFile}", $line, FILE_APPEND);
-        error_log($line);
     }
 
     protected static function cronNameFromLog(string $logFile): string

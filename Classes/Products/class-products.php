@@ -530,6 +530,28 @@ class Products extends Users
 
         $db->commit();
 
+        if ($product_status === 'need-approval') {
+            $instructor_name = $this->getData(
+                "SELECT 
+                            CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS instructor_name
+                        FROM {$this->table['instructors']} i
+                        LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
+                        WHERE i.id = ?",
+                [$instructor_id]
+            )['instructor_name'];
+            $submission_date = jdate("Y/m/d H:i", '', '', 'Asia/Tehran', 'en');
+            $this->send_review_product_email(
+                $type,
+                $type === 'course' ? 'دوره' : 'جزوه',
+                $title,
+                $price,
+                $discount_amount,
+                $instructor_name,
+                $submission_date,
+                $description
+            );
+        }
+
         Response::success('محتوا ثبت شد و پس از تأیید در سایت نمایش داده خواهد شد');
     }
 
@@ -704,8 +726,8 @@ class Products extends Users
                     }
 
                     $full_book_temp = $full_book_files[0];
-                    $pdf = new Fpdi();
-                    $pages = $pdf->setSourceFile($full_book_temp);
+                    $demo_pdf = new Fpdi();
+                    $pages = $demo_pdf->setSourceFile($full_book_temp);
 
                     if ($pages < 5) {
                         throw new Exception('جزوه نباید کمتر از ۵ صفحه باشد');
@@ -733,11 +755,10 @@ class Products extends Users
 
                     $all_pages = range(1, $pages);
                     $selected_pages = array_slice($all_pages, 0, $pages < 20 ? 3 : 5);
-                    $demo_pdf = new Fpdi();
 
                     foreach ($selected_pages as $page_num) {
-                        $templateId = $pdf->importPage($page_num);
-                        $demo_size = $pdf->getTemplateSize($templateId);
+                        $templateId = $demo_pdf->importPage($page_num);
+                        $demo_size = $demo_pdf->getTemplateSize($templateId);
                         $demo_pdf->AddPage($demo_size['orientation'], [$demo_size['width'], $demo_size['height']]);
                         $demo_pdf->useTemplate($templateId);
                     }
@@ -810,9 +831,9 @@ class Products extends Users
             if ($product_type === 'course') {
                 $result = $db->updateData(
                     "UPDATE {$db->table['course_details']} SET
-                    `access_type` = ?, `all_lessons_count` = ?, `duration` = ?, 
-                    `online_price` = ?, `online_discount_amount` = ?
-                WHERE product_id = ?",
+                                `access_type` = ?, `all_lessons_count` = ?, `duration` = ?, 
+                                `online_price` = ?, `online_discount_amount` = ?
+                            WHERE product_id = ?",
                     [
                         $access_type,
                         $lessons_count,
@@ -909,6 +930,30 @@ class Products extends Users
                 throw new Exception('خطا در بروزرسانی وضعیت محصول');
             }
 
+            if ($status === 'need-approval') {
+                $product_data = $db->getData(
+                    "SELECT
+                                p.*,
+                                CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS instructor_name
+                            FROM {$db->table['products']} p
+                            INNER JOIN {$db->table['instructors']} i ON p.instructor_id = i.id
+                            LEFT JOIN {$db->table['user_profiles']} up ON i.user_id = up.user_id
+                            WHERE p.uuid = ?",
+                    [$product_uuid]
+                );
+                $submission_date = jdate("Y/m/d H:i", '', '', 'Asia/Tehran', 'en');
+                $this->send_review_product_email(
+                    $product_data['type'],
+                    $product_data['type'] === 'course' ? 'دوره' : 'جزوه',
+                    $product_data['title'],
+                    $product_data['price'],
+                    $product_data['discount_amount'],
+                    $product_data['instructor_name'],
+                    $submission_date,
+                    $product_data['description']
+                );
+            }
+
             if (!empty($params['return'])) {
                 return true;
             } else {
@@ -936,6 +981,37 @@ class Products extends Users
         }
 
         return $target;
+    }
+
+    private function send_review_product_email(
+        $content_type,
+        $content_type_fa,
+        $content_title,
+        $content_price,
+        $content_discount_amount,
+        $instructor_name,
+        $submission_date,
+        $content_description
+    ) {
+        $this->send_email(
+            $_ENV['ADMIN_MAIL'],
+            'مدیریت محترم',
+            'بررسی محتوا در آکادمی وویس کلاس',
+            null,
+            null,
+            [],
+            $_ENV['SENDPULSE_NEW_OR_EDIT_PRODUCT_TEMPLATE_ID'],
+            [
+                "content_type" => $content_type,
+                "content_type_fa" => $content_type_fa,
+                "content_title" => $content_title,
+                "content_price" => number_format($content_price),
+                "content_discount_amount" => number_format($content_discount_amount),
+                "instructor_name" => $instructor_name,
+                "submission_date" => $submission_date,
+                "content_description" => $content_description,
+            ]
+        );
     }
 
     public function get_similar_products($params)

@@ -298,7 +298,7 @@ CREATE TABLE
         authority VARCHAR(36),
         card_hash VARCHAR(64),
         card_pan VARCHAR(16),
-        ref_id INT,
+        ref_id VARCHAR(20),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
         paid_at TIMESTAMP,
