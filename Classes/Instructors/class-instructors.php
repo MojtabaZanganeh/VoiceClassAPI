@@ -26,6 +26,19 @@ class Instructors extends Users
         return $instructor;
     }
 
+    public function get_instructor_by_uuid($uuid, $columns = '*')
+    {
+        $instructor = $this->getData(
+            "SELECT $columns FROM {$this->table['instructors']} WHERE uuid = ?",
+            [$uuid]
+        );
+
+        if (!$instructor) {
+            Response::error('مدرس یافت نشد');
+        }
+        return $instructor;
+    }
+
     public function add_new_instructor($params)
     {
         $admin = $this->check_role(['admin']);
@@ -266,9 +279,39 @@ class Instructors extends Users
 
         Response::success('اطلاعات مدرس بروز شد');
     }
+
+    public function admin_login($params)
+    {
+        $this->check_role(['admin']);
+        $this->check_params($params, ['uuid']);
+
+        $instructor_uuid = $params['uuid'];
+
+        $instructor = $this->get_instructor_by_uuid($instructor_uuid, 'user_id');
+
+         if (!$instructor) {
+            Response::error('خطا در دریافت اطلاعات مدرس');
+        }
+
+        $user = $this->get_user_by_id($instructor['user_id']);
+
+        if (!$user) {
+            Response::error('خطا در دریافت اطلاعات کاربر');
+        }
+
+        $jwt_token = $this->generate_token([
+            'user_id' => $user['id'],
+            'phone' => $user['phone'],
+            'username' => $user['username'],
+            'role' => $user['role']
+        ]);
+        $user['token'] = $jwt_token;
+
+        Response::success('ورود انجام شد', 'user', $user);
+    }
+
     public function get_instructors($params)
     {
-
         $is_admin = false;
         if (!empty($params['admin']) && $params['admin'] === 'true') {
             $admin = $this->check_role(['admin']);
