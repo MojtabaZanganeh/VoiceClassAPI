@@ -272,7 +272,8 @@ trait Base
         ?string $text = null,
         array $attachments = [],
         ?int $templateId = null,
-        array $templateVariables = []
+        array $templateVariables = [],
+        bool $throw = false
     ): bool {
         $clientId = $_ENV['SENDPULSE_CLIENT_ID'];
         $clientSecret = $_ENV['SENDPULSE_CLIENT_SECRET'];
@@ -366,7 +367,12 @@ trait Base
                     'message' => $e->getMessage()
                 ]
             );
-            throw $e;
+            if ($throw) {
+                throw $e;
+            }
+            else {
+                return false;
+            }
         }
     }
 

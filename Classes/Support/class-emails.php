@@ -21,6 +21,7 @@ class Emails extends Support
 
     public function __construct()
     {
+        parent::__construct();
         self::$clientId = $_ENV['SENDPULSE_CLIENT_ID'] ?? '';
         self::$clientSecret = $_ENV['SENDPULSE_CLIENT_SECRET'] ?? '';
     }
@@ -35,7 +36,11 @@ class Emails extends Support
             $params['recipient_name'],
             $params['subject'],
             null,
-            $params['content']
+            $params['content'],
+            [],
+            null,
+            [],
+            true
         );
 
         if (!$result) {

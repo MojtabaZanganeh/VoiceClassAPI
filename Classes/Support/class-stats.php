@@ -48,7 +48,7 @@ class Stats extends Support
                         JOIN {$this->table['orders']} o ON oi.order_id = o.id
                         JOIN {$this->table['products']} p ON oi.product_id = p.id
                         JOIN {$this->table['users']} u ON o.user_id = u.id
-                        JOIN {$this->table['user_profiles']} up ON o.user_id = up.user_id
+                        LEFT JOIN {$this->table['user_profiles']} up ON o.user_id = up.user_id
                         ORDER BY o.created_at DESC
                         LIMIT 3;
         ";
@@ -77,7 +77,7 @@ class Stats extends Support
                             FROM {$this->table['transactions']} t
                             JOIN {$this->table['orders']} o ON t.order_id = o.id
                             JOIN {$this->table['users']} u ON o.user_id = u.id
-                            JOIN {$this->table['user_profiles']} up ON o.user_id = up.user_id
+                            LEFT JOIN {$this->table['user_profiles']} up ON o.user_id = up.user_id
                             ORDER BY t.created_at DESC
                             LIMIT 3;
         ";
