@@ -30,16 +30,18 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
  * This section loads the required libraries and class files for routing and other operations.
  *
  */
-require_once("vendor/autoload.php");
-require_once("jdf.php");
-require_once("load-classes.php");
-require_once("api-router.php");
+require_once "vendor/autoload.php";
+require_once "jdf.php";
+require_once "load-classes.php";
+require_once "api-router.php";
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 use Classes\Base\Error;
 new Error();
+
+define('ROOT_PATH', __DIR__);
 
 /**
  * Retrieves the "Api-Key" header from the request.

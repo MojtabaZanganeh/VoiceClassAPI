@@ -292,12 +292,30 @@ trait Base
         }
 
         $attachmentsBinary = [];
-        foreach ($attachments as $fileName => $filePath) {
-            $fullPath = __DIR__ . $filePath;
-            if (file_exists($fullPath)) {
-                $attachmentsBinary[$fileName] = base64_encode(file_get_contents($fullPath));
-            } else {
-                throw new Exception("فایل پیوست {$filePath} در پوشه Data یافت نشد.");
+
+        if (isset($attachments['name']) && is_array($attachments['name'])) {
+            foreach ($_FILES['attachments']['name'] as $i => $name) {
+                $tmpPath = $_FILES['attachments']['tmp_name'][$i];
+                $error = $_FILES['attachments']['error'][$i];
+
+                if ($error === UPLOAD_ERR_OK && file_exists($tmpPath)) {
+                    $attachmentsBinary[$name] = base64_encode(file_get_contents($tmpPath));
+                } else {
+                    throw new Exception("فایل {$name} قابل خواندن نیست یا با خطا مواجه شده.");
+                }
+            }
+        } else {
+            foreach ($attachments as $attachment) {
+                if (isset($attachment['data'])) {
+                    $attachmentsBinary[$attachment['name']] = $attachment['data'];
+                } else if (isset($attachment['path'])) {
+                    $fullPath = ROOT_PATH . $attachment['path'];
+                    if (file_exists($fullPath)) {
+                        $attachmentsBinary[$attachment['name'] ?? basename($fullPath)] = base64_encode(file_get_contents($fullPath));
+                    } else {
+                        throw new Exception("فایل پیوست {$attachment['path']} در پوشه Data یافت نشد.");
+                    }
+                }
             }
         }
 
@@ -370,9 +388,7 @@ trait Base
             if ($throw) {
                 throw $e;
             }
-            else {
-                return false;
-            }
+            return false;
         }
     }
 

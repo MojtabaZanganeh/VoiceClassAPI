@@ -31,13 +31,15 @@ class Emails extends Support
         $this->check_role(['admin']);
         $this->check_params($params, ['recipient_name', 'recipient_email', 'subject', 'content']);
 
+        $attachments = $_FILES['attachments'] ?? [];
+
         $result = $this->send_email(
             $params['recipient_email'],
             $params['recipient_name'],
             $params['subject'],
             null,
             $params['content'],
-            [],
+            $attachments,
             null,
             [],
             true

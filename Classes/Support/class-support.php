@@ -188,7 +188,7 @@ class Support extends Users
             $userEmail = $request['email'];
 
             try {
-                $templateId = (int) $_ENV['SENDPULSE_TEMPLATE_ID'];
+                $templateId = (int) $_ENV['SENDPULSE_SEND_CONTRACT_TEMPLATE_ID'];
                 if (empty($templateId)) {
                     throw new Exception('خطا در دریافت اطلاعات');
                 }
@@ -199,7 +199,7 @@ class Support extends Users
                     'قرارداد همکاری در آکادمی وویس کلاس',
                     null,
                     null,
-                    ['قرارداد.docx' => '/../../Data/contract.docx'],
+                    [['name'=> 'قرارداد.docx', 'path' => '/Data/contract.docx']],
                     $templateId,
                     ["current_year" => 2025]
                 );
