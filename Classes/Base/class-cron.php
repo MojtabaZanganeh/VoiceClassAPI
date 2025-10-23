@@ -34,9 +34,10 @@ abstract class Cron
         $this->currentTime = jdate("H:i", '', '', 'Asia/Tehran', 'en');
 
         $this->cronTimes = [
-            'clear-expired-transactions' => $_ENV['CRON_CLEAR_EXPIRED'] ?? '00:00',
-            'update-products-statistics' => $_ENV['CRON_UPDATE_PRODUCTS'] ?? '00:05',
-            'update-instructors-statistics' => $_ENV['CRON_UPDATE_INSTRUCTORS'] ?? '00:10',
+            'clear-expired-transactions' => $_ENV['CRON_CLEAR_EXPIRED_TRANSACTIONS'] ?? '00:00',
+            'update-products-statistics' => $_ENV['CRON_UPDATE_PRODUCTS_STATISTICS'] ?? '00:05',
+            'update-instructors-statistics' => $_ENV['CRON_UPDATE_INSTRUCTORS_STATISTICS'] ?? '00:10',
+            'update-instructor-earnings' => $_ENV['CRON_UPDATE_INSTRUCTOR_EARNINGS'] ?? '00:15',
         ];
     }
 
@@ -115,7 +116,7 @@ abstract class Cron
     {
         $date = jdate('Y-m-d H:i:s', '', '', 'Asia/Tehran', 'en');
         $line = "[{$date}] {$message}\n";
-        @file_put_contents(__DIR__ . "/../Logs/{$logFile}", $line, FILE_APPEND);
+        @file_put_contents(__DIR__ . "/../../Logs/{$logFile}", $line, FILE_APPEND);
     }
 
     protected static function cronNameFromLog(string $logFile): string

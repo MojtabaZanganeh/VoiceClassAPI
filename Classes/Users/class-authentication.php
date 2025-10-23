@@ -146,6 +146,7 @@ class Authentication extends Database
                         $jwt_token = $this->generate_token([
                             'user_id' => $user['id'],
                             'phone' => $user['phone'],
+                            'username' => $user['username'],
                             'role' => $user['role']
                         ]);
                         $user['token'] = $jwt_token;

@@ -160,8 +160,6 @@ class Products extends Users
 
         $total_pages = ceil($stats['total'] / $per_page_count);
 
-        Error::log('courses', [$results, $total_pages, $stats]);
-
         if (!$results) {
             Response::success($not_found_message, 'productsData', [
                 $type . 's' => [],
