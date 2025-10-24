@@ -1,35 +1,29 @@
 <?php
 namespace Classes\Base;
 
+use PDO;
+use PDOException;
+
 /**
- * Database Class
+ * Database Class using PDO
  *
- * This class is responsible for handling database connections and operations
- * using MySQLi, including executing SQL statements, transactions, and managing
- * database interactions.
- * 
- * @package Classes\Base
+ * Handles database operations securely and flexibly using PDO.
  */
 class Database
 {
-
     /**
-     * MySQLi connection object.
+     * PDO connection object.
      *
-     * @var \mysqli
+     * @var PDO
      */
-    private $connection;
+    private PDO $connection;
 
     /**
-     * Database Tables Array
-     *
-     * This variable contains an array of different database table names that are used for various database 
-     * operations such as insert, update, delete, etc. Each entry in this array is a key-value pair where the key 
-     * represents the logical name of the table and the value is the actual table name in the database.
+     * Table name mappings.
      *
      * @var array
      */
-    public $table = [
+    public array $table = [
         'book_details' => 'book_details',
         'cart_items' => 'cart_items',
         'categories' => 'categories',
@@ -59,186 +53,114 @@ class Database
     ];
 
     /**
-     * Database constructor.
+     * Constructor: Establishes PDO connection.
      *
-     * Initializes a new connection to the MySQL database using MySQLi.
-     * Throws an exception if the connection fails.
-     *
-     * @throws \Exception If the connection fails.
+     * @throws PDOException
      */
     public function __construct()
     {
-        $this->connection = new \mysqli(
-            $_ENV['DB_HOST'],
-            $_ENV['DB_USERNAME'],
-            $_ENV['DB_PASSWORD'],
-            $_ENV['DB_NAME'],
-            $_ENV['DB_PORT']
-        );
+        $dsn = "mysql:host={$_ENV['DB_HOST']};dbname={$_ENV['DB_NAME']};port={$_ENV['DB_PORT']};charset=utf8mb4";
 
-        if ($this->connection->connect_error) {
-            throw new \Exception('Connection Failed: ' . $this->connection->connect_error);
-        }
-
-        $this->connection->set_charset("utf8mb4");
-    }
-
-    /**
-     * Database destructor.
-     *
-     * Closes the database connection when the object is destroyed.
-     */
-    public function __destruct()
-    {
-        if ($this->connection) {
-            $this->connection->close();
+        try {
+            $this->connection = new PDO($dsn, $_ENV['DB_USERNAME'], $_ENV['DB_PASSWORD'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]);
+        } catch (PDOException $e) {
+            throw new PDOException("Connection failed: " . $e->getMessage());
         }
     }
 
     /**
-     * Executes a prepared SQL statement.
+     * Executes a prepared statement.
      *
-     * Prepares the provided SQL query and binds the given parameters to it.
-     * Executes the query and returns the prepared statement object.
-     *
-     * @param string $sql The SQL query to be executed.
-     * @param array $params The parameters to be bound to the query.
-     * @param string $types The types of the parameters (optional).
-     * @return \mysqli_stmt The prepared statement object.
-     * @throws \Exception If there is an error preparing the statement.
+     * @param string $sql
+     * @param array $params
+     * @return PDOStatement
      */
-    public function executeStatement($sql, $params = [], $types = '')
+    public function executeStatement(string $sql, array $params = []): \PDOStatement
     {
         $stmt = $this->connection->prepare($sql);
-
-        if (!$stmt) {
-            throw new \Exception("Error in preparing Statement: " . $this->connection->error);
-        }
-
-        if (!empty($params)) {
-            if (empty($types)) {
-                $types = str_repeat('s', count($params));
-            }
-            $stmt->bind_param($types, ...$params);
-        }
-
-        $stmt->execute();
+        $stmt->execute($params);
         return $stmt;
-    }
-
-    /**
-     * Returns the ID generated in the last INSERT query.
-     *
-     * @return int The insert ID of the last executed query.
-     */
-    public function get_insert_id()
-    {
-        return $this->connection->insert_id;
     }
 
     /**
      * Fetches data from the database.
      *
-     * Executes a SQL query and returns the result as an associative array.
-     * If `$fetch_all` is true, returns all rows; otherwise, returns the first row.
-     *
-     * @param string $sql The SQL query to be executed.
-     * @param array $params The parameters to be bound to the query.
-     * @param bool $fetch_all Whether to fetch all rows or just the first row.
-     * @return array|bool|null Returns an array of results, a single row, or null if no data is found.
+     * @param string $sql
+     * @param array $params
+     * @param bool $fetchAll
+     * @return array|null
      */
-    public function getData(string $sql, array $params, bool $fetch_all = false): array|bool|null
+    public function getData(string $sql, array $params = [], bool $fetchAll = false): array|null
     {
         $stmt = $this->executeStatement($sql, $params);
-        $result = $stmt->get_result();
-        $stmt->close();
-
-        if ($result->num_rows > 0) {
-            return $fetch_all ? $result->fetch_all(MYSQLI_ASSOC) : $result->fetch_assoc();
-        }
-
-        return null;
+        $result = $fetchAll ? $stmt->fetchAll() : $stmt->fetch();
+        return $result ?: null;
     }
 
     /**
-     * Inserts data into the database.
+     * Inserts data and returns last insert ID.
      *
-     * Executes an INSERT query and returns the ID of the newly inserted row.
-     *
-     * @param string $sql The SQL query to be executed.
-     * @param array $params The parameters to be bound to the query.
-     * @return int|null Returns the insert ID if successful, otherwise null.
+     * @param string $sql
+     * @param array $params
+     * @return int|null
      */
     public function insertData(string $sql, array $params): int|null
     {
         $stmt = $this->executeStatement($sql, $params);
-        $result = $stmt->affected_rows !== -1 ? $this->get_insert_id() : null;
-        $stmt->close();
-        return $result;
+        return $this->connection->lastInsertId() ?: null;
     }
 
     /**
-     * Updates data in the database.
+     * Updates data and returns success status.
      *
-     * Executes an UPDATE query and returns true if the update was successful.
-     *
-     * @param string $sql The SQL query to be executed.
-     * @param array $params The parameters to be bound to the query.
-     * @return bool Returns true if the update was successful, otherwise false.
+     * @param string $sql
+     * @param array $params
+     * @return bool
      */
     public function updateData(string $sql, array $params): bool
     {
         $stmt = $this->executeStatement($sql, $params);
-        $result = $stmt->affected_rows !== -1;
-        $stmt->close();
-        return $result;
+        return $stmt->rowCount() > 0;
     }
 
     /**
-     * Delete data from the database.
+     * Deletes data and returns success status.
      *
-     * Executes an DELETE query and returns true if the delete was successful.
-     *
-     * @param string $sql The SQL query to be executed.
-     * @param array $params The parameters to be bound to the query.
-     * @return bool Returns true if the delete was successful, otherwise false.
+     * @param string $sql
+     * @param array $params
+     * @return bool
      */
     public function deleteData(string $sql, array $params): bool
     {
         $stmt = $this->executeStatement($sql, $params);
-        $result = $stmt->affected_rows !== -1;
-        $stmt->close();
-
-        return $result;
+        return $stmt->rowCount() > 0;
     }
 
     /**
-     * Begins a new transaction.
-     *
-     * Starts a database transaction.
+     * Begins a transaction.
      */
-    public function beginTransaction()
+    public function beginTransaction(): void
     {
-        $this->connection->begin_transaction();
+        $this->connection->beginTransaction();
     }
 
     /**
      * Commits the current transaction.
-     *
-     * Finalizes the transaction and applies all changes.
      */
-    public function commit()
+    public function commit(): void
     {
         $this->connection->commit();
     }
 
     /**
      * Rolls back the current transaction.
-     *
-     * Reverts any changes made during the transaction.
      */
-    public function rollback()
+    public function rollback(): void
     {
-        $this->connection->rollback();
+        $this->connection->rollBack();
     }
 }

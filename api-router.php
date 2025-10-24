@@ -26,6 +26,7 @@ $router->add('/users/search-users', 'GET', 'Classes\Users\Users', 'search_users'
 $router->add('/instructors/add-new-instructor', 'POST', 'Classes\Instructors\Instructors', 'add_new_instructor');
 $router->add('/instructors/update-instructor-info', 'POST', 'Classes\Instructors\Instructors', 'update_instructor_info');
 $router->add('/instructors/get-all', 'GET', 'Classes\Instructors\Instructors', 'get_instructors');
+$router->add('/instructors/get-stats', 'GET', 'Classes\Instructors\Instructors', 'get_instructor_stats');
 $router->add('/instructors/admin-login', 'POST', 'Classes\Instructors\Instructors', 'admin_login');
 
 $router->add('/products/add-new', 'POST', 'Classes\Products\Products', 'add_new_product');

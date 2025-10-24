@@ -7,10 +7,10 @@ class UpdateInstructorEarningsCron extends Cron
 {
     protected function run(): void
     {
-        // if ($this->currentTime !== $this->cronTimes['update-instructor-earnings']) {
-        //     self::log($this->logFile, "Skipped: time mismatch (current={$this->currentTime}, expected={$this->cronTimes['update-instructor-earnings']})");
-        //     return;
-        // }
+        if ($this->currentTime !== $this->cronTimes['update-instructor-earnings']) {
+            self::log($this->logFile, "Skipped: time mismatch (current={$this->currentTime}, expected={$this->cronTimes['update-instructor-earnings']})");
+            return;
+        }
 
         $this->logMessage = 'Instructor earnings updated successfully';
 
@@ -20,7 +20,7 @@ class UpdateInstructorEarningsCron extends Cron
             INNER JOIN {$this->db->table['products']} p ON p.id = oi.product_id
             INNER JOIN {$this->db->table['instructors']} i ON i.id = p.instructor_id
             LEFT JOIN {$this->db->table['instructor_earnings']} ie ON ie.order_item_id = oi.id
-            WHERE (oi.status = 'completed' OR oi.status = 'sending' OR oi.status = 'pending-review') AND ie.id IS NULL
+            WHERE oi.status IN ('completed', 'sending', 'pending-review') AND ie.id IS NULL
         ", [], true) ?? [];
 
         foreach ($newItems as $item) {
@@ -48,7 +48,7 @@ class UpdateInstructorEarningsCron extends Cron
             SELECT ie.id
             FROM {$this->db->table['instructor_earnings']} ie
             INNER JOIN {$this->db->table['order_items']} oi ON oi.id = ie.order_item_id
-            WHERE (oi.status != 'completed' AND oi.status != 'sending' AND oi.status != 'pending-review') AND ie.status != 'paid'
+            WHERE oi.status NOT IN ('completed', 'sending', 'pending-review') AND ie.status != 'paid'
         ", [], true) ?? [];
 
         foreach ($canceledItems as $row) {
@@ -60,6 +60,25 @@ class UpdateInstructorEarningsCron extends Cron
 
             if (!$ok) {
                 throw new Exception("Failed to cancel earning ID {$row['id']}");
+            }
+        }
+
+        $revivedItems = $this->db->getData("
+            SELECT ie.id
+            FROM {$this->db->table['instructor_earnings']} ie
+            INNER JOIN {$this->db->table['order_items']} oi ON oi.id = ie.order_item_id
+            WHERE oi.status IN ('completed', 'sending', 'pending-review') AND ie.status = 'canceled'
+        ", [], true) ?? [];
+
+        foreach ($revivedItems as $row) {
+            $ok = $this->db->updateData("
+                UPDATE {$this->db->table['instructor_earnings']}
+                SET status = 'pending'
+                WHERE id = ?
+            ", [$row['id']]);
+
+            if (!$ok) {
+                throw new Exception("Failed to revive earning ID {$row['id']}");
             }
         }
 
@@ -76,19 +95,22 @@ class UpdateInstructorEarningsCron extends Cron
 
             $totals = $this->db->getData("
                 SELECT 
-                    SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS total_paid,
+                    SUM(CASE WHEN status != 'canceled' THEN amount ELSE 0 END) AS total_earnings,
                     SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS total_unpaid
                 FROM {$this->db->table['instructor_earnings']}
                 WHERE instructor_id = ?
             ", [$id], false);
+
+            $totalEarnings = (int) ($totals['total_earnings'] ?? 0);
+            $totalUnpaid = (int) ($totals['total_unpaid'] ?? 0);
 
             $ok = $this->db->updateData("
                 UPDATE {$this->db->table['instructors']}
                 SET total_earnings = ?, unpaid_earnings = ?
                 WHERE id = ?
             ", [
-                (int)($totals['total_paid'] ?? 0),
-                (int)($totals['total_unpaid'] ?? 0),
+                $totalEarnings,
+                $totalUnpaid,
                 $id
             ]);
 

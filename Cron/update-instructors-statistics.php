@@ -39,6 +39,14 @@ class UpdateInstructorStatsCron extends Cron
             GROUP BY p.instructor_id
         ", [], true) ?? [];
 
+        $students = $this->db->getData("
+            SELECT p.instructor_id, COUNT(oi.id) AS total_students
+            FROM {$this->db->table['order_items']} oi
+            INNER JOIN {$this->db->table['products']} p ON p.id = oi.product_id
+            WHERE oi.status = 'completed'
+            GROUP BY p.instructor_id
+        ", [], true) ?? [];
+
         $coursesMap = [];
         foreach ($courses as $row) {
             $coursesMap[$row['instructor_id']] = (int)$row['total_courses'];
@@ -57,6 +65,11 @@ class UpdateInstructorStatsCron extends Cron
             ];
         }
 
+        $studentsMap = [];
+        foreach ($students as $row) {
+            $studentsMap[$row['instructor_id']] = (int)$row['total_students'];
+        }
+
         $instructors = $this->db->getData("
             SELECT id FROM {$this->db->table['instructors']}
         ", [], true);
@@ -71,12 +84,13 @@ class UpdateInstructorStatsCron extends Cron
             $totalBooks   = $booksMap[$id] ?? 0;
             $avgRating    = $ratingsMap[$id]['avg'] ?? 0.0;
             $ratingCount  = $ratingsMap[$id]['count'] ?? 0;
+            $totalStudents = $studentsMap[$id] ?? 0;
 
             $ok = $this->db->updateData("
                 UPDATE {$this->db->table['instructors']}
-                SET courses_taught = ?, books_written = ?, rating_avg = ?, rating_count = ?
+                SET courses_taught = ?, books_written = ?, rating_avg = ?, rating_count = ?, students = ?
                 WHERE id = ?
-            ", [$totalCourses, $totalBooks, $avgRating, $ratingCount, $id]);
+            ", [$totalCourses, $totalBooks, $avgRating, $ratingCount, $totalStudents, $id]);
 
             if (!$ok) {
                 throw new Exception("Failed to update instructor statistics for ID {$id}");

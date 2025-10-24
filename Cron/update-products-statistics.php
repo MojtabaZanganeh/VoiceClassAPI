@@ -19,7 +19,7 @@ class UpdateProductStatsCron extends Cron
                 oi.product_id,
                 COUNT(oi.id) AS total_students
             FROM {$this->db->table['order_items']} oi
-            WHERE oi.status IN ('completed', 'sending')
+            WHERE oi.status IN ('completed', 'sending', 'pending-review')
             GROUP BY oi.product_id
         ", [], true) ?? [];
 

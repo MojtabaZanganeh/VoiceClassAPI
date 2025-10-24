@@ -280,6 +280,114 @@ class Instructors extends Users
         Response::success('اطلاعات مدرس بروز شد');
     }
 
+    public function get_instructor_stats()
+    {
+        // $instructor_user = $this->check_role(['instructor']);
+        $instructor = $this->get_instructor_by_user_id(3, 'id');
+
+        $stats_sql = "SELECT 
+                        i.rating_avg,
+                        i.rating_count,
+                        i.students,
+                        i.courses_taught,
+                        i.books_written,
+                        i.total_earnings,
+                        i.unpaid_earnings,
+
+                        (
+                            SELECT p.students
+                            FROM {$this->table['products']} p
+                            WHERE p.instructor_id = i.id AND p.type = 'course'
+                            LIMIT 1
+                        ) AS total_course_students,
+
+                        (
+                            SELECT SUM(p.students)
+                            FROM {$this->table['products']} p
+                            WHERE p.instructor_id = i.id AND p.type = 'book'
+                        ) AS total_book_students,
+
+                        (
+                            SELECT COALESCE(SUM(ie.amount), 0)
+                            FROM {$this->table['instructor_earnings']} ie
+                            JOIN {$this->table['order_items']} oi ON ie.order_item_id = oi.id
+                            JOIN {$this->table['products']} p ON oi.product_id = p.id
+                            WHERE ie.status != 'canceled' AND p.instructor_id = i.id AND p.type = 'course'
+                        ) AS total_course_earnings,
+
+                        (
+                            SELECT COALESCE(SUM(ie.amount), 0)
+                            FROM {$this->table['instructor_earnings']} ie
+                            JOIN {$this->table['order_items']} oi ON ie.order_item_id = oi.id
+                            JOIN {$this->table['products']} p ON oi.product_id = p.id
+                            WHERE ie.status != 'canceled' AND p.instructor_id = i.id AND p.type = 'book'
+                        ) AS total_book_earnings
+
+                    FROM {$this->table['instructors']} i
+                    WHERE i.id = :id
+        ";
+
+        $stats = $this->getData($stats_sql, ['id'=>$instructor['id']]);
+
+        $courses_sql = "SELECT 
+                            p.id,
+                            p.uuid,
+                            p.slug,
+                            p.title,
+                            p.thumbnail,
+                            p.price,
+                            p.students,
+                            p.rating_avg,
+                            p.rating_count
+                        FROM products p
+                        WHERE p.type = 'course' AND students > 0 AND instructor_id = ?
+                        GROUP BY p.id
+                        ORDER BY p.students DESC
+                        LIMIT 3;
+        ";
+        $top_selling_courses = $this->getData($courses_sql, [$instructor['id']], true);
+
+        $books_sql = "SELECT 
+                            p.id,
+                            p.uuid,
+                            p.slug,
+                            p.title,
+                            p.thumbnail,
+                            p.price,
+                            p.students,
+                            p.rating_avg,
+                            p.rating_count
+                        FROM products p
+                        WHERE p.type = 'book' AND students > 0 AND instructor_id = ?
+                        GROUP BY p.id
+                        ORDER BY p.students DESC
+                        LIMIT 3;
+        ";
+        $top_selling_books = $this->getData($books_sql, [$instructor['id']], true);
+
+        $course_sales_sql = "SELECT 
+                            SUM(p.students) AS book_sales_count
+                        FROM products p
+                        WHERE p.type = 'course' AND students > 0 AND instructor_id = ?
+                        GROUP BY p.id
+        ";
+        $book_sales_count = $this->getData($course_sales_sql, [$instructor['id']], true);
+
+        $book_sales_sql = "SELECT 
+                            SUM(p.students) AS book_sales_count
+                        FROM products p
+                        WHERE p.type = 'book' AND students > 0 AND instructor_id = ?
+                        GROUP BY p.id
+        ";
+        $book_sales_count = $this->getData($book_sales_sql, [$instructor['id']], true);
+
+        Response::success('آمار دریافت شد', 'instructorData', [
+            'stats' => $stats,
+            'top_selling_courses' => $top_selling_courses,
+            'top_selling_books' => $top_selling_books
+        ]);
+    }
+
     public function admin_login($params)
     {
         $this->check_role(['admin']);
