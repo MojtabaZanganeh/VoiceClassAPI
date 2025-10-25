@@ -181,24 +181,45 @@ class Products extends Users
         ]);
     }
 
-    private function get_slug_by_uuid(string $product_uuid)
+    public function get_product_by_uuid($params)
     {
-        $product = $this->getData("SELECT slug FROM {$this->table['products']} WHERE uuid = ?", [$product_uuid]);
-        return $product ? $product['slug'] : null;
+        $this->check_role(['instructor', 'admin']);
+
+        $this->check_params($params, ['uuid']);
+
+        $product = $this->getData("SELECT `type`, slug FROM {$this->table['products']} WHERE uuid = ?", [$params['uuid']]);
+
+        if (!$product) {
+            Response::error('محصول یافت نشد');
+        }
+
+        $slug = $product['slug'];
+        $params = ['slug' => $slug, 'dashboard' => true];
+
+        if ($product['type'] === 'course') {
+            $courses_obj = new Courses();
+            $courses_obj->get_course_by_slug($params);
+        } elseif ($product['type'] === 'book') {
+            $books_obj = new Books();
+            $books_obj->get_book_by_slug($params);
+        } else {
+            Response::error('نوع محصول نامعتبر است');
+        }
     }
 
     protected function get_product_by_slug($params, $typeConfig)
     {
-        $this->check_params($params, [['slug', 'uuid']]);
+        $this->check_params($params, ['slug']);
 
-        $slug = !empty($params['uuid']) ? $this->get_slug_by_uuid($params['uuid']) : (!empty($params['slug']) ? $params['slug'] : null);
+        $slug = !empty($params['slug']) ? $params['slug'] : null;
 
         if (!$slug) {
-            Response::error('محصولی یافت نشد');
+            Response::error('شناسه محصول یافت نشد');
         }
 
+        $digital_link = '';
         $additional_where = " AND p.status = 'verified' AND i.status = 'active' ";
-        if (isset($params['dashboard']) && $params['dashboard'] === 'true') {
+        if (isset($params['dashboard']) && $params['dashboard'] === true) {
             $user = $this->check_role(['instructor', 'admin']);
 
             $is_instructor = $user && $user['role'] === 'instructor';
@@ -208,6 +229,7 @@ class Products extends Users
                 $this->check_instructor_permission($instructor['id'], $slug);
             }
 
+            $digital_link = ' dt.digital_link, ';
             $additional_where = '';
         }
 
@@ -255,6 +277,7 @@ class Products extends Users
                     p.rating_avg,
                     p.rating_count,
                     p.students,
+                    $digital_link
                     {$config['select_fields']}
                 FROM {$this->table['products']} p
                 LEFT JOIN {$this->table['categories']} pc ON p.category_id = pc.id
@@ -281,6 +304,7 @@ class Products extends Users
         $product['requirements'] = isset($product['requirements'])
             ? json_decode($product['requirements'], true)
             : null;
+        $product['digital_link'] = !empty($product['digital_link']) ? $this->get_full_image_url($product['digital_link']) : null;
 
         $chapter_obj = new Chapters();
         $product['chapters'] = $chapter_obj->get_product_chapters(['product_uuid' => $product['uuid'], 'return' => true]);
@@ -293,7 +317,7 @@ class Products extends Users
 
         Response::success(
             $config['messages']['success'],
-            !empty($params['uuid']) ? 'product' : $config['messages']['response_key'],
+            !empty($params['dashboard']) ? 'product' : $config['messages']['response_key'],
             $product
         );
     }
