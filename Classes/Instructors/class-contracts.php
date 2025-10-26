@@ -18,6 +18,10 @@ class Contracts extends Instructors
     {
         $instructor_user = $this->check_role(['instructor']);
         $instructor = $this->get_instructor_by_user_id($instructor_user['id']);
+        
+        if ($files['contract']['size'] > 256 * 1024) {
+            Response::error('حجم فایل نباید بیشتر از ۲۵۶ کیلوبایت باشد');
+        }
 
         $upload_dir = 'Uploads/Contracts/';
 

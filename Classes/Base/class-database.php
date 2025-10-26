@@ -124,8 +124,17 @@ class Database
      */
     public function updateData(string $sql, array $params): bool
     {
-        $stmt = $this->executeStatement($sql, $params);
-        return $stmt->rowCount() > 0;
+        try {
+            $stmt = $this->executeStatement($sql, $params);
+            return true;
+        } catch (PDOException $e) {
+            Error::log('update_error', [
+                'message' => $e->getMessage(),
+                'sql' => $sql,
+                'params' => $params
+            ]);
+            return false;
+        }
     }
 
     /**
@@ -137,8 +146,17 @@ class Database
      */
     public function deleteData(string $sql, array $params): bool
     {
-        $stmt = $this->executeStatement($sql, $params);
-        return $stmt->rowCount() > 0;
+        try {
+            $stmt = $this->executeStatement($sql, $params);
+            return true;
+        } catch (PDOException $e) {
+            Error::log('delete_error', [
+                'message' => $e->getMessage(),
+                'sql' => $sql,
+                'params' => $params
+            ]);
+            return false;
+        }
     }
 
     /**
