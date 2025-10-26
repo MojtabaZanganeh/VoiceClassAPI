@@ -195,6 +195,26 @@ CREATE TABLE
         FOREIGN KEY (user_id) REFERENCES users (id)
     ) ENGINE = InnoDB;
 
+-- قراردادهای مدرس ها
+CREATE TABLE
+    instructor_contracts (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
+        instructor_id INT UNSIGNED NOT NULL,
+        status ENUM (
+            'pending-review',
+            'approved',
+            'rejected',
+            'expired'
+        ) DEFAULT 'pending-review' NOT NULL,
+        file TEXT NOT NULL,
+        expires_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (instructor_id) REFERENCES instructors (id)
+    ) ENGINE = InnoDB;
+
+-- درآمدهای مدرس ها
 CREATE TABLE
     instructor_earnings (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -250,7 +270,7 @@ CREATE TABLE
         product_id INT UNSIGNED NOT NULL,
         status ENUM (
             'pending-pay',
-            'need-approval',
+            'pending-review',
             'sending',
             'completed',
             'rejected',

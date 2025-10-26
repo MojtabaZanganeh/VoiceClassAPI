@@ -8,6 +8,7 @@ use Classes\Base\Response;
 use Classes\Base\Sanitizer;
 use Classes\Products\Categories;
 use Classes\Users\Users;
+use Exception;
 
 class Instructors extends Users
 {
@@ -282,8 +283,8 @@ class Instructors extends Users
 
     public function get_instructor_stats()
     {
-        // $instructor_user = $this->check_role(['instructor']);
-        $instructor = $this->get_instructor_by_user_id(3, 'id');
+        $instructor_user = $this->check_role(['instructor']);
+        $instructor = $this->get_instructor_by_user_id($instructor_user['id'], 'id');
 
         $stats_sql = "SELECT 
                         i.rating_avg,
@@ -327,7 +328,7 @@ class Instructors extends Users
                     WHERE i.id = :id
         ";
 
-        $stats = $this->getData($stats_sql, ['id'=>$instructor['id']]);
+        $stats = $this->getData($stats_sql, ['id' => $instructor['id']]);
 
         $courses_sql = "SELECT 
                             p.id,
@@ -347,6 +348,14 @@ class Instructors extends Users
         ";
         $top_selling_courses = $this->getData($courses_sql, [$instructor['id']], true);
 
+        if ($top_selling_courses) {
+            foreach ($top_selling_courses as &$course) {
+                $course['thumbnail'] = $this->get_full_image_url($course['thumbnail']);
+            }
+        }
+
+        $stats['top_selling_courses'] = $top_selling_courses;
+
         $books_sql = "SELECT 
                             p.id,
                             p.uuid,
@@ -365,26 +374,26 @@ class Instructors extends Users
         ";
         $top_selling_books = $this->getData($books_sql, [$instructor['id']], true);
 
-        $course_sales_sql = "SELECT 
-                            SUM(p.students) AS book_sales_count
-                        FROM products p
-                        WHERE p.type = 'course' AND students > 0 AND instructor_id = ?
-                        GROUP BY p.id
-        ";
-        $book_sales_count = $this->getData($course_sales_sql, [$instructor['id']], true);
+        if ($top_selling_books) {
+            foreach ($top_selling_books as &$book) {
+                $book['thumbnail'] = $this->get_full_image_url($book['thumbnail']);
+            }
+        }
 
-        $book_sales_sql = "SELECT 
-                            SUM(p.students) AS book_sales_count
-                        FROM products p
-                        WHERE p.type = 'book' AND students > 0 AND instructor_id = ?
-                        GROUP BY p.id
-        ";
-        $book_sales_count = $this->getData($book_sales_sql, [$instructor['id']], true);
+        $stats['top_selling_books'] = $top_selling_books;
+
+        $contract = $this->getData(
+            "SELECT * FROM {$this->table['instructor_contracts']} WHERE instructor_id = ?",
+            [$instructor['id']]
+        );
+
+        if ($contract) {
+            $contract['file'] = $this->get_full_image_url($contract['file']);
+        }
 
         Response::success('آمار دریافت شد', 'instructorData', [
             'stats' => $stats,
-            'top_selling_courses' => $top_selling_courses,
-            'top_selling_books' => $top_selling_books
+            'contract' => $contract
         ]);
     }
 
@@ -397,7 +406,7 @@ class Instructors extends Users
 
         $instructor = $this->get_instructor_by_uuid($instructor_uuid, 'user_id');
 
-         if (!$instructor) {
+        if (!$instructor) {
             Response::error('خطا در دریافت اطلاعات مدرس');
         }
 

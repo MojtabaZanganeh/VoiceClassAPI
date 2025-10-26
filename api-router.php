@@ -28,6 +28,9 @@ $router->add('/instructors/update-instructor-info', 'POST', 'Classes\Instructors
 $router->add('/instructors/get-all', 'GET', 'Classes\Instructors\Instructors', 'get_instructors');
 $router->add('/instructors/get-stats', 'GET', 'Classes\Instructors\Instructors', 'get_instructor_stats');
 $router->add('/instructors/admin-login', 'POST', 'Classes\Instructors\Instructors', 'admin_login');
+$router->add('/instructors/contracts/upload-contract', 'POST', 'Classes\Instructors\Contracts', 'upload_contract');
+$router->add('/instructors/contracts/get-all', 'GET', 'Classes\Instructors\Contracts', 'get_all_contracts');
+$router->add('/instructors/contracts/update-status', 'POST', 'Classes\Instructors\Contracts', 'update_contract_status');
 
 $router->add('/products/add-new', 'POST', 'Classes\Products\Products', 'add_new_product');
 $router->add('/products/update-product', 'POST', 'Classes\Products\Products', 'update_product');
@@ -73,5 +76,5 @@ $router->add('/support/get-all-join-us-requests', 'GET', 'Classes\Support\Suppor
 $router->add('/support/update-join-us-request-status', 'POST', 'Classes\Support\Support', 'update_join_us_request_status');
 $router->add('/support/get-user-tickets', 'GET', 'Classes\Support\Tickets', 'get_user_tickets');
 $router->add('/support/emails/get-all', 'GET', 'Classes\Support\Emails', 'get_sent_emails');
-$router->add('/support/emails/send-email', 'POST', 'Classes\Support\Emails', 'send_email_manually'); 
-$router->add('/support/stats/get-stats', 'GET', 'Classes\Support\Stats', 'get_stats'); 
+$router->add('/support/emails/send-email', 'POST', 'Classes\Support\Emails', 'send_email_manually');
+$router->add('/support/stats/get-stats', 'GET', 'Classes\Support\Stats', 'get_stats');
