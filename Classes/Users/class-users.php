@@ -212,7 +212,7 @@ class Users extends Authentication
             foreach ($roles as $role) {
                 $hasAccess[] = match ($role) {
                     'user' => ($token_decoded->role === 'user' || $token_decoded->role === 'admin'),
-                    'instructor' => ($token_decoded->role === 'instructor'),
+                    'instructor' => ($token_decoded->role === 'instructor' || $token_decoded->role === 'admin'),
                     'admin' => $token_decoded->role === 'admin',
                     default => false,
                 };

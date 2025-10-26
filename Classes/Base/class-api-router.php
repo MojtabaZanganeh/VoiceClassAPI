@@ -109,7 +109,9 @@ class Api_Router
                         default => null,
                     } ?: null;
 
-                    $this->callClassFunction($class, $function, $params);
+                    $files = !empty($_FILES) ? $_FILES : null;
+
+                    $this->callClassFunction($class, $function, $params, $files);
                     return true;
                 }
 
@@ -130,7 +132,7 @@ class Api_Router
      * @param string $function The method of the class to be called.
      * @param mixed $params The parameters to be passed to the method.
      */
-    private function callClassFunction($class, $function, $params)
+    private function callClassFunction($class, $function, $params, $files)
     {
         $class = $this->sanitizeInput($class);
         $function = $this->sanitizeInput($function);
@@ -138,7 +140,7 @@ class Api_Router
 
         $classInstance = new $class();
         if (method_exists($classInstance, $function)) {
-            call_user_func_array([$classInstance, $function], array($params));
+            call_user_func_array([$classInstance, $function], [$params, $files]);
         } else {
             Response::error('خطای سرور', 'method_exists', 500);
         }

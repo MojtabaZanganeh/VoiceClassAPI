@@ -14,7 +14,7 @@ class Error
         set_exception_handler([$this, 'exception_handler']);
     }
 
-    private function format_message(string $type, int $code, string $message, string $file, int $line, array $trace = [])
+    private function format_message(string $type, int | string $code, string $message, string $file, int $line, array $trace = [])
     {
         date_default_timezone_set('Asia/Tehran');
         $date = new \DateTime();

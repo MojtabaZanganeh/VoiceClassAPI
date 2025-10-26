@@ -1,6 +1,8 @@
 <?php
 namespace Classes\Base;
 
+use DateTime;
+use DateTimeZone;
 use Exception;
 use Ramsey\Uuid\Uuid;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -399,17 +401,29 @@ trait Base
      * @param bool $gmt Flag to determine whether to return the GMT time or local time.
      * @return string The current time in the specified format.
      */
-    public static function current_time($format = 'Y-m-d H:i:s', $gmt = false)
+    public static function current_time($format = 'Y-m-d H:i:s', $gmt = false, $jalali = false, $locale = 'en', $modify = '')
     {
         $timezone = 'Asia/Tehran';
         date_default_timezone_set($timezone);
+
+        $datetime = new DateTime('now', new DateTimeZone($timezone));
+
         if ($gmt) {
-            $time = gmdate($format);
-        } else {
-            $time = date($format);
+            $datetime->setTimezone(new DateTimeZone('GMT'));
         }
 
-        return $time;
+        if (!empty($modify)) {
+            try {
+                $datetime->modify($modify);
+            } catch (Exception $e) {
+            }
+        }
+
+        if ($jalali) {
+            return jdate($format, $datetime->getTimestamp(), '', $timezone, $locale);
+        }
+
+        return $datetime->format($format);
     }
 
     /**
