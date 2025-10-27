@@ -448,6 +448,13 @@ class Instructors extends Users
             : "i.*, ";
         $admin_columns = $is_admin ? "u.phone, u.email," : "";
 
+        $current_page = isset($params['current_page']) ? max((int) $params['current_page'], 1) : 1;
+        $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 20)
+            ? (int) $params['per_page_count']
+            : 20;
+
+        $offset = ($current_page - 1) * $per_page_count;
+
         $where = !$is_admin ? " WHERE i.status = 'active' " : "";
         $sql = "SELECT
                     $columns
@@ -459,13 +466,15 @@ class Instructors extends Users
                 LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
                 $where
                 GROUP BY i.id
+                LIMIT ? OFFSET ?
         ";
-        $all_instructors = $this->getData($sql, [], true);
+        $all_instructors = $this->getData($sql, [$per_page_count, $offset], true);
 
         if (!$all_instructors) {
             Response::success('خطا در دریافت مدرسین', 'instructorsData', [
                 'instructors' => [],
-                'stats' => $stats
+                'stats' => $stats,
+                'total_pages' => 1
             ]);
         }
 
@@ -486,9 +495,11 @@ class Instructors extends Users
         }
 
         if ($is_admin) {
+            $total_pages = ceil($stats['total'] / $per_page_count);
             Response::success('مدرسین دریافت شدند', 'instructorsData', [
                 'instructors' => $all_instructors,
-                'stats' => $stats
+                'stats' => $stats,
+                'total_pages' => $total_pages
             ]);
         }
 

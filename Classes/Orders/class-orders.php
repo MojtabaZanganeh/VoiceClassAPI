@@ -244,12 +244,12 @@ class Orders extends Carts
             $bind_params[] = "%$query%";
         }
 
-        $current_page = isset($params['current_page']) ? max(((int) $params['current_page'] - 1), 0) : 0;
+        $current_page = isset($params['current_page']) ? max((int) $params['current_page'], 1) : 1;
         $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 20)
             ? (int) $params['per_page_count']
             : 20;
 
-        $offset = $current_page * $per_page_count;
+        $offset = ($current_page - 1) * $per_page_count;
         $bind_params = array_merge($bind_params, [$per_page_count, $offset]);
 
         $sql = "SELECT
@@ -293,24 +293,26 @@ class Orders extends Carts
                 LIMIT ? OFFSET ?
         ";
 
-
         $all_orders = $this->getData($sql, $bind_params, true);
 
         if (!$all_orders) {
             Response::success('سفارشی یافت نشد', 'ordersData', [
                 'orders' => [],
-                'stats' => $stats
+                'stats' => $stats,
+                'total_pages' => 1
             ]);
         }
 
         foreach ($all_orders as &$order) {
             $order['order'] = json_decode($order['order'], true);
-            // $order['order']['address'] = json_decode($order['order']['address'], true);
         }
+
+        $total_pages = ceil($stats['total'] / $per_page_count);
 
         Response::success('سفارشات دریافت شد', 'ordersData', [
             'orders' => $all_orders,
-            'stats' => $stats
+            'stats' => $stats,
+            'total_pages' => $total_pages
         ]);
     }
 

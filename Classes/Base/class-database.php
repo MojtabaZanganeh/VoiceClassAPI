@@ -3,6 +3,7 @@ namespace Classes\Base;
 
 use PDO;
 use PDOException;
+use PDOStatement;
 
 /**
  * Database Class using PDO
@@ -80,7 +81,7 @@ class Database
      * @param array $params
      * @return PDOStatement
      */
-    public function executeStatement(string $sql, array $params = []): \PDOStatement
+    public function executeStatement(string $sql, array $params = []): PDOStatement
     {
         $stmt = $this->connection->prepare($sql);
         $stmt->execute($params);

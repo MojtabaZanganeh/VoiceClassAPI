@@ -26,12 +26,12 @@ class Products extends Users
 
     protected function get_products($params, $type, $details_table, $select_fields, $access_types, $not_found_message, $success_message, $response_key)
     {
-        $query = $params['query'] ?? null;
+        $query = $params['q'] ?? null;
         $category = $params['category'] ?? null;
         $level = $params['level'] ?? null;
         $access_type = $params['access_type'] ?? null;
         $sort = $params['sort'] ?? 'newest';
-        $current_page = $params['current_page'] ?? 1;
+        $current_page = isset($params['current_page']) ? max((int) $params['current_page'], 1) : 1;
         $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 12)
             ? $params['per_page_count']
             : 12;

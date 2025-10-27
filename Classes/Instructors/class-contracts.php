@@ -23,9 +23,13 @@ class Contracts extends Instructors
             Response::error('حجم فایل نباید بیشتر از ۲۵۶ کیلوبایت باشد');
         }
 
-        $upload_dir = 'Uploads/Contracts/';
-
         $file_ext = pathinfo($files['contract']['name'], PATHINFO_EXTENSION);
+        
+        if (strtoupper($file_ext) !== 'PDF') {
+            Response::error('فرمت فایل باید PDF باشد');
+        }
+
+        $upload_dir = 'Uploads/Contracts/';
 
         $uuid = $this->generate_uuid();
 
@@ -81,7 +85,7 @@ class Contracts extends Instructors
     {
         $this->check_role(['admin']);
 
-        $query = $params['query'] ?? null;
+        $query = $params['q'] ?? null;
         $current_page = $params['current_page'] ?? 1;
         $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 12)
             ? $params['per_page_count']

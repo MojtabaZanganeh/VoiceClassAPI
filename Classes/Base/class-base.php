@@ -557,7 +557,7 @@ trait Base
             }
 
             return $url;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $url;
         }
     }
@@ -583,7 +583,7 @@ trait Base
 
             return file_exists($file_path) ? $file_path : null;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }

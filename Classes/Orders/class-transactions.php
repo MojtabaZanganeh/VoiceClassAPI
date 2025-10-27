@@ -195,12 +195,12 @@ class Transactions extends Orders
             $bind_params[] = "%$query%";
         }
 
-        $current_page = isset($params['current_page']) ? max(((int) $params['current_page'] - 1), 0) : 0;
+        $current_page = isset($params['current_page']) ? max((int) $params['current_page'], 1) : 1;
         $per_page_count = (isset($params['per_page_count']) && $params['per_page_count'] <= 20)
             ? (int) $params['per_page_count']
             : 20;
 
-        $offset = $current_page * $per_page_count;
+        $offset = ($current_page - 1) * $per_page_count;
 
         $idsSql = "SELECT t.id
                 FROM {$this->table['transactions']} t
@@ -218,7 +218,8 @@ class Transactions extends Orders
         if (!$transactionIds) {
             Response::success('تراکنشی یافت نشد', 'transactionsData', [
                 'transactions' => [],
-                'stats' => $stats
+                'stats' => $stats,
+                'total_pages' => 1
             ]);
         }
 
@@ -267,9 +268,12 @@ class Transactions extends Orders
             $transaction['receipt'] = $transaction['receipt'] ? $this->get_full_image_url($transaction['receipt']) : null;
         }
 
+        $total_pages = ceil($stats['total'] / $per_page_count);
+
         Response::success('تراکنش های شما دریافت شد', 'transactionsData', [
             'transactions' => $transactions,
-            'stats' => $stats
+            'stats' => $stats,
+            'total_pages' => $total_pages
         ]);
     }
 
