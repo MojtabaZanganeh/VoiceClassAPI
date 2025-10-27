@@ -56,6 +56,7 @@ $router->add('/books/get-user-books', 'GET', 'Classes\Products\Books', 'get_user
 $router->add('/carts/add-item', 'POST', 'Classes\Orders\Carts', 'add_cart_item');
 $router->add('/carts/remove-item', 'POST', 'Classes\Orders\Carts', 'remove_cart_item');
 $router->add('/carts/clear-cart', 'GET', 'Classes\Orders\Carts', 'clear_cart_items');
+$router->add('/carts/sync-cart', 'POST', 'Classes\Orders\Carts', 'sync_cart_items');
 $router->add('/carts/get-items', 'GET', 'Classes\Orders\Carts', 'get_cart_items');
 
 $router->add('/orders/add-order', 'POST', 'Classes\Orders\Orders', 'add_order');

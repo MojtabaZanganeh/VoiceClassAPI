@@ -2,6 +2,7 @@
 namespace Classes\Users;
 
 use Classes\Base\Base;
+use Classes\Base\Error;
 use Classes\Base\Sanitizer;
 use Classes\Base\Database;
 use Classes\Base\Response;
@@ -43,15 +44,10 @@ class Authentication extends Database
         $send_sms = $_ENV['SEND_SMS'] === 'true';
 
         $sql = "SELECT * FROM {$this->table['otps']} WHERE `phone` = ? AND `is_used` = '0' AND `page` = ? ORDER BY expires_at DESC LIMIT 1";
-        $execute = [$phone, $page];
-        $stmt = $this->executeStatement($sql, $execute);
-        $result = $stmt->get_result();
+        $result = $this->getData($sql, [$phone, $page]);
 
-        if ($result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            if (time() < $row['expires_at']) {
-                Response::success('زمان باقی مانده است');
-            }
+        if ($result && isset($result['expires_at']) && time() < $result['expires_at']) {
+            Response::success('زمان باقی مانده است');
         }
 
         $rand_code = $send_sms ? $this->get_random('int', 5) : '11111';
@@ -60,38 +56,44 @@ class Authentication extends Database
 
         $now = $this->current_time();
 
-        $this->beginTransaction();
+        $db = new Database();
+        $db->beginTransaction();
 
-        $sql = "INSERT INTO {$this->table['otps']} (`phone`, `code`, `expires_at`, `page`, `user_ip`, `created_at`) VALUES (?, ?, ?, ?, ?, ?)";
-        $execute = [
-            $phone,
-            $rand_code,
-            $expires_at,
-            $page,
-            $this->get_user_ip(),
-            $now
-        ];
+        try {
 
-        $result = $this->insertData($sql, $execute);
-
-        if ($result) {
-            $send_result = $this->send_sms(
+            $sql = "INSERT INTO {$db->table['otps']} (`phone`, `code`, `expires_at`, `page`, `user_ip`, `created_at`) VALUES (?, ?, ?, ?, ?, ?)";
+            $execute = [
                 $phone,
-                $_ENV["SEND_CODE_TEMPLATE_ID"],
-                [['name' => 'code', 'value' => $rand_code]],
-                $send_sms
-            );
-            if ($send_result === true) {
-                $this->commit();
-                Response::success('کد تایید ارسال شد');
-            } else {
-                $this->rollback();
-                Response::error('کد ارسال نشد', ['error_code' => $send_result], 206);
-            }
-        } else {
-            Response::error('کد در پایگاه داده وارد نشد');
-        }
+                $rand_code,
+                $expires_at,
+                $page,
+                $this->get_user_ip(),
+                $now
+            ];
 
+            $result = $db->insertData($sql, $execute);
+
+            if ($result) {
+                $send_result = $this->send_sms(
+                    $phone,
+                    $_ENV["SEND_CODE_TEMPLATE_ID"],
+                    [['name' => 'code', 'value' => $rand_code]],
+                    $send_sms
+                );
+                if ($send_result === true) {
+                    $db->commit();
+                    Response::success('کد تایید ارسال شد');
+                } else {
+                    throw new Exception('کد ارسال نشد');
+                }
+            } else {
+                throw new Exception('کد در پایگاه داده وارد نشد');
+            }
+        } catch (Exception $e) {
+            $db->rollback();
+            Error::log("send-sms-$phone", ['message' => 'Failed to send sms', 'error_code' => $send_result ?? null]);
+            Response::error($e ? $e->getMessage() : 'خطا در ارسال کد تایید');
+        }
     }
 
     /**

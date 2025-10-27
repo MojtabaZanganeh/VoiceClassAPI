@@ -13,7 +13,7 @@ class Carts extends Users
 {
     use Base, Sanitizer;
 
-    public function add_cart_item($params)
+    public function add_cart_item($params, $response = true)
     {
         $user = $this->check_role();
 
@@ -41,7 +41,10 @@ class Carts extends Users
             [$user['id'], $product['id'], $item_access_type]
         );
         if ($exist_item) {
-            Response::error('محصول قبلا به سبد خرید اضافه شده است');
+            if ($response) {
+                Response::error('محصول قبلا به سبد خرید اضافه شده است');
+            }
+            return false;
         }
 
         $item_id = $this->insertData(
@@ -56,11 +59,17 @@ class Carts extends Users
         );
 
         if ($item_id) {
-            $cart_items = $this->get_cart_items(['return' => true]);
-            Response::success('محصول به سبد خرید افزوده شد', 'userCart', $cart_items);
+            if ($response) {
+                $cart_items = $this->get_cart_items(['return' => true]);
+                Response::success('محصول به سبد خرید افزوده شد', 'userCart', $cart_items);
+            }
+            return false;
         }
 
-        Response::error('خطا در افزودن محصول به سبد خرید');
+        if ($response) {
+            Response::error('خطا در افزودن محصول به سبد خرید');
+        }
+        return false;
     }
 
     public function remove_cart_item($params)
@@ -110,6 +119,32 @@ class Carts extends Users
             return false;
         }
         Response::error('خطا در خالی کردن سبد خرید');
+    }
+
+    public function sync_cart_items($params)
+    {
+        $user = $this->check_role();
+
+        $this->check_params($params, ['items']);
+
+        $items = $params['items'];
+        if (!is_array($items)) {
+            Response::error('خطا در دریافت محصولات سبد خرید');
+        }
+
+        foreach ($items as $item) {
+            $this->add_cart_item(
+                [
+                    'uuid' => $item['uuid'],
+                    'access_type' => $item['access_type'],
+                    'quantity' => $item['quantity']
+                ],
+                false
+            );
+        }
+
+        $cart_items = $this->get_cart_items(['return' => true]);
+        Response::success('سبد خرید همگام سازی شد', 'userCart', $cart_items);
     }
 
     public function get_cart_items($params = [])
