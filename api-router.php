@@ -38,6 +38,7 @@ $router->add('/products/update-product-status', 'POST', 'Classes\Products\Produc
 $router->add('/products/upload-product-file', 'POST', 'Classes\Products\Products', 'upload_product_file');
 $router->add('/products/get-similar-products', 'GET', 'Classes\Products\Products', 'get_similar_products');
 $router->add('/products/get-by-uuid', 'GET', 'Classes\Products\Products', 'get_product_by_uuid');
+$router->add('/products/get-slug-by-short-link', 'GET', 'Classes\Products\Products', 'get_slug_by_short_link');
 
 $router->add('/chapters/get-product-chapters', 'GET', 'Classes\Products\Chapters', 'get_product_chapters');
 

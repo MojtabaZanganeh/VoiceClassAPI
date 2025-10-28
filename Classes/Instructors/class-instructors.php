@@ -471,9 +471,9 @@ class Instructors extends Users
         $all_instructors = $this->getData($sql, [$per_page_count, $offset], true);
 
         if (!$all_instructors) {
-            Response::success('خطا در دریافت مدرسین', 'instructorsData', [
+            Response::success('مدرسی یافت نشد', 'instructorsData', [
                 'instructors' => [],
-                'stats' => $stats,
+                'stats' => $is_admin ? $stats : [],
                 'total_pages' => 1
             ]);
         }
@@ -498,7 +498,7 @@ class Instructors extends Users
             $total_pages = ceil($stats['total'] / $per_page_count);
             Response::success('مدرسین دریافت شدند', 'instructorsData', [
                 'instructors' => $all_instructors,
-                'stats' => $stats,
+                'stats' => $is_admin ? $stats : [],
                 'total_pages' => $total_pages
             ]);
         }

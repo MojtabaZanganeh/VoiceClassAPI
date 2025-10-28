@@ -93,6 +93,7 @@ CREATE TABLE
             'admin-deleted'
         ) NOT NULL,
         instructor_active BOOLEAN DEFAULT TRUE NOT NULL,
+        short_link VARCAR(6) UNIQUE NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED NOT NULL,
         instructor_id INT UNSIGNED NOT NULL,

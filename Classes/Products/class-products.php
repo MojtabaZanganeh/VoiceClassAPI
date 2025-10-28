@@ -40,13 +40,14 @@ class Products extends Users
         $status_column = '';
         $status_where_condition = '';
         $status_bindParams = '';
+        $stats_query = '';
         if ($role && in_array($role, ['admin', 'instructor'])) {
             if ($role === 'admin') {
                 $admin = $this->check_role(['admin']);
                 $where_condition = '';
                 $bindParams = [];
             } elseif ($role === 'instructor') {
-                $instructor_user = $this->check_role(['instructor', 'admin']);
+                $instructor_user = $this->check_role(['instructor']);
                 $instructor_obj = new Instructors();
                 $instructor = $instructor_obj->get_instructor_by_user_id($instructor_user['id']);
                 $where_condition = " AND p.instructor_id = ? ";
@@ -60,6 +61,13 @@ class Products extends Users
                 $status_where_condition = " AND p.status = ?";
                 $status_bindParams = $status_filter;
             }
+
+            $stats_query = ", SUM(CASE WHEN status = 'not-completed' THEN 1 ELSE 0 END) as not_completed,
+                            SUM(CASE WHEN status = 'need-approval' THEN 1 ELSE 0 END) as need_approval,
+                            SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) as verified,
+                            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
+                            SUM(CASE WHEN status = 'deleted' THEN 1 ELSE 0 END) as deleted,
+                            SUM(CASE WHEN status = 'admin-deleted' THEN 1 ELSE 0 END) as admin_deleted ";
         } else {
             $where_condition = " AND p.status = 'verified' AND p.instructor_active = 1 ";
             $bindParams = [];
@@ -103,13 +111,8 @@ class Products extends Users
         }
 
         $statsSql = "SELECT 
-                            COUNT(*) as total,
-                            SUM(CASE WHEN status = 'not-completed' THEN 1 ELSE 0 END) as not_completed,
-                            SUM(CASE WHEN status = 'need-approval' THEN 1 ELSE 0 END) as need_approval,
-                            SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) as verified,
-                            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
-                            SUM(CASE WHEN status = 'deleted' THEN 1 ELSE 0 END) as deleted,
-                            SUM(CASE WHEN status = 'admin-deleted' THEN 1 ELSE 0 END) as admin_deleted
+                            COUNT(*) as total
+                            $stats_query
                         FROM {$this->table['products']} p
                             WHERE `type` = ? $where_condition";
 
@@ -181,6 +184,30 @@ class Products extends Users
         ]);
     }
 
+    public function get_slug_by_short_link($params)
+    {
+        $this->check_params($params, ['short_link']);
+
+        $short_link = $params['short_link'];
+
+        $product = $this->getData(
+            "SELECT `type`, slug FROM {$this->table['products']} WHERE `status` = 'verified' AND instructor_active = 1 AND short_link = ?",
+            [$short_link]
+        );
+
+        if (!$product) {
+            Response::error('محصول یافت نشد');
+        }
+
+        Response::success(
+            'محصول یافت شد',
+            'productData',
+            [
+                'type' => $product['type'],
+                'slug' => $product['slug']
+            ]
+        );
+    }
     public function get_product_by_uuid($params)
     {
         $this->check_role(['instructor', 'admin']);
@@ -249,6 +276,7 @@ class Products extends Users
 
         $sql = "SELECT
                     p.uuid,
+                    p.short_link,
                     p.status,
                     p.instructor_active,
                     p.type,
@@ -425,6 +453,8 @@ class Products extends Users
 
         $slug = $this->generate_slug($title, $random_sku);
 
+        $short_link = $this->get_random('mix', 6, $this->table['products'], 'short_link');
+
         $temp_path = 'Uploads/Temp/';
         $thumbnail_path = 'Uploads/Thumbnails/';
         $book_path = 'Uploads/Books/';
@@ -442,11 +472,12 @@ class Products extends Users
 
         $product_id = $db->insertData(
             "INSERT INTO {$db->table['products']}
-                        (`uuid`, `status`, `slug`, `category_id`, `instructor_id`, `type`, `thumbnail`, `title`, `introduction`, `description`, `what_you_learn`, `requirements`, `level`, `price`, `discount_amount`, `creator_id`, `created_at`, `updated_at`)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (`uuid`, `status`, `short_link`, `slug`, `category_id`, `instructor_id`, `type`, `thumbnail`, `title`, `introduction`, `description`, `what_you_learn`, `requirements`, `level`, `price`, `discount_amount`, `creator_id`, `created_at`, `updated_at`)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 $uuid,
                 $product_status,
+                $short_link,
                 $slug,
                 $category_id,
                 $instructor_id,
