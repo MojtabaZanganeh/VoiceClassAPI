@@ -37,7 +37,7 @@ class Products extends Users
             : 12;
 
         $role = $params['role'] ?? null;
-        $status_column = '';
+        $management_columns = '';
         $status_where_condition = '';
         $status_bindParams = '';
         $stats_query = '';
@@ -54,7 +54,7 @@ class Products extends Users
                 $bindParams = [$instructor['id']];
             }
 
-            $status_column = ' p.status, p.instructor_active, ';
+            $management_columns = ' p.status, p.instructor_active, p.instructor_share_percent, ';
 
             $status_filter = $params['status'] ?? null;
             if (!empty($status_filter) && in_array($status_filter, ['not-completed', 'need-approval', 'verified', 'rejected', 'deleted', 'admin-deleted'])) {
@@ -129,7 +129,7 @@ class Products extends Users
         $sql = "SELECT
                     p.uuid,
                     p.slug,
-                    $status_column
+                    $management_columns
                     p.category_id,
                     pc.name AS category,
                     p.thumbnail,
@@ -926,7 +926,7 @@ class Products extends Users
             $chapter_obj->update_chapters($params, $product_id, $product_type, $db);
 
             $status = ($user['role'] === 'admin') ? 'verified' : 'need-approval';
-            $this->update_product_status(['product_uuid' => $product_uuid, 'status' => $status, 'return' => true], $db);
+            $this->update_product_properties(['product_uuid' => $product_uuid, 'status' => $status, 'return' => true], $db);
 
             $db->commit();
             Response::success('محصول با موفقیت ویرایش شد', 'product', [
@@ -940,7 +940,7 @@ class Products extends Users
         }
     }
 
-    public function update_product_status($params, ?Database $db = null)
+    public function update_product_properties($params, ?Database $db = null)
     {
         try {
             if ($db === null) {
@@ -974,9 +974,17 @@ class Products extends Users
                 throw new Exception('شما مجاز به ویرایش این محصول نیستید');
             }
 
+            $bind_params = [$status, $product_uuid];
+            $instructor_share_query = '';
+            if (!empty($params['instructor_share_percent'])) {
+                $instructor_share_percent = $this->check_input($params['instructor_share_percent'], null, 'سهم مدرس', '/^(100|[1-9]?[0-9])$/');
+                $instructor_share_query = 'instructor_share_percent = ?, ';
+                array_unshift($bind_params, $instructor_share_percent);
+            }
+
             $update_product_status = $db->updateData(
-                "UPDATE {$db->table['products']} SET `status` = ? WHERE uuid = ?",
-                [$status, $product_uuid]
+                "UPDATE {$db->table['products']} SET $instructor_share_query `status` = ? WHERE uuid = ?",
+                $bind_params
             );
 
             if (!$update_product_status) {
@@ -986,7 +994,11 @@ class Products extends Users
             if ($status === 'need-approval') {
                 $product_data = $db->getData(
                     "SELECT
-                                p.*,
+                                p.type,
+                                p.title,
+                                p.price,
+                                p.discount_amount,
+                                p.description,
                                 CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS instructor_name
                             FROM {$db->table['products']} p
                             INNER JOIN {$db->table['instructors']} i ON p.instructor_id = i.id
@@ -1013,7 +1025,9 @@ class Products extends Users
                 Response::success('وضعیت محصول بروزرسانی شد');
             }
         } catch (Exception $e) {
-            $db->rollback();
+            if (!empty($params['return'])) {
+                $db->rollback();
+            }
             Response::error($e->getMessage(), null, 400, $db);
         }
     }

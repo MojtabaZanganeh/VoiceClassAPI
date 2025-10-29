@@ -485,7 +485,6 @@ class Instructors extends Users
             $instructor['categories_id'] = !empty($instructor['categories_id']) ? json_decode($instructor['categories_id'], true) : [];
             $instructor['categories'] = !empty($instructor['categories_id']) ? $category_obj->get_categories_by_id($instructor['categories_id']) : '';
             if (!$is_admin) {
-                unset($instructor['share_percent']);
                 unset($instructor['total_earnings']);
                 unset($instructor['unpaid_earnings']);
                 unset($instructor['paid_earnings']);

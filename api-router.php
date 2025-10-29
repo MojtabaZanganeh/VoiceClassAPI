@@ -34,7 +34,7 @@ $router->add('/instructors/contracts/update-status', 'POST', 'Classes\Instructor
 
 $router->add('/products/add-new', 'POST', 'Classes\Products\Products', 'add_new_product');
 $router->add('/products/update-product', 'POST', 'Classes\Products\Products', 'update_product');
-$router->add('/products/update-product-status', 'POST', 'Classes\Products\Products', 'update_product_status');
+$router->add('/products/update-product-properties', 'POST', 'Classes\Products\Products', 'update_product_properties');
 $router->add('/products/upload-product-file', 'POST', 'Classes\Products\Products', 'upload_product_file');
 $router->add('/products/get-similar-products', 'GET', 'Classes\Products\Products', 'get_similar_products');
 $router->add('/products/get-by-uuid', 'GET', 'Classes\Products\Products', 'get_product_by_uuid');

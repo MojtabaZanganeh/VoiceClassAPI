@@ -20,14 +20,14 @@ class Stats extends Support
         $stats_sql = "SELECT
                             (SELECT COUNT(*) FROM users) AS total_users,
                             (SELECT COUNT(*) FROM instructors) AS total_instructors,
-                            (SELECT COUNT(*) FROM products WHERE type = 'course') AS total_courses,
-                            (SELECT COUNT(*) FROM products WHERE type = 'book') AS total_books,
+                            (SELECT COUNT(*) FROM products WHERE `type` = 'course' AND `status` = 'verified' AND instructor_active = 1) AS total_courses,
+                            (SELECT COUNT(*) FROM products WHERE `type` = 'book' AND `status` = 'verified' AND instructor_active = 1) AS total_books,
                             (SELECT COUNT(DISTINCT order_id)
                         FROM order_items
-                        WHERE status NOT IN ('canceled', 'rejected')) AS total_orders,
+                        WHERE `status` NOT IN ('canceled', 'rejected')) AS total_orders,
                             (SELECT SUM(amount)
                         FROM transactions
-                        WHERE status = 'paid') AS total_income;
+                        WHERE `status` = 'paid') AS total_income;
         ";
         $stats = $this->getData($stats_sql, []);
 

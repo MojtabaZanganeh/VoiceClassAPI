@@ -15,7 +15,7 @@ class UpdateInstructorEarningsCron extends Cron
         $this->logMessage = 'Instructor earnings updated successfully';
 
         $newItems = $this->db->getData("
-            SELECT oi.id AS order_item_id, p.instructor_id, oi.price, i.share_percent
+            SELECT oi.id AS order_item_id, p.instructor_id, oi.price, p.instructor_share_percent
             FROM {$this->db->table['order_items']} oi
             INNER JOIN {$this->db->table['products']} p ON p.id = oi.product_id
             INNER JOIN {$this->db->table['instructors']} i ON i.id = p.instructor_id
@@ -24,7 +24,7 @@ class UpdateInstructorEarningsCron extends Cron
         ", [], true) ?? [];
 
         foreach ($newItems as $item) {
-            $amount = (int) floor($item['price'] * $item['share_percent'] / 100);
+            $amount = (int) floor($item['price'] * $item['instructor_share_percent'] / 100);
             $commission = (int) ($item['price'] - $amount);
 
             $ok = $this->db->insertData("

@@ -317,7 +317,18 @@ class Transactions extends Orders
             }
 
             $items = $db->getData(
-                "SELECT id, uuid, product_id, access_type, price, `status` FROM {$db->table['order_items']} WHERE order_id = ?",
+                "SELECT 
+                        oi.id,
+                        oi.uuid,
+                        oi.product_id,
+                        oi.access_type,
+                        oi.price,
+                        oi.status,
+                        p.instructor_id,
+                        p.instructor_share_percent
+                    FROM {$db->table['order_items']} oi
+                    JOIN {$db->table['products']} p ON oi.product_id = p.id
+                    WHERE order_id = ?",
                 [$order['order_id']],
                 true
             );
@@ -365,71 +376,59 @@ class Transactions extends Orders
                     throw new Exception('خطا در بروزرسانی وضعیت سفارش');
                 }
 
-                $instructor = $db->getData(
-                    "SELECT i.id, i.share_percent
-                        FROM {$db->table['products']} p
-                        INNER JOIN {$db->table['instructors']} i ON i.id = p.instructor_id
-                        WHERE p.id = ?",
-                    [$item['product_id']]
-                );
+                // $earning_uuid = $this->generate_uuid();
 
-                if (!$instructor) {
-                    throw new Exception('خطا در دریافت اطلاعات مدرس');
-                }
+                // $instructor_earning_amount = $item['price'] * ($item['instructor_share_percent'] / 100);
 
-                $earning_uuid = $this->generate_uuid();
+                // $site_commission = $item['price'] - $instructor_earning_amount;
 
-                $instructor_earning_amount = $item['price'] * ($instructor['share_percent'] / 100);
+                // $current_time = $this->current_time();
 
-                $site_commission = $item['price'] - $instructor_earning_amount;
+                // $earning = $db->getData(
+                //     "SELECT id, `status` FROM {$db->table['instructor_earnings']} WHERE order_item_id = ?",
+                //     [$item['id']]
+                // );
 
-                $current_time = $this->current_time();
+                // $update_instructor_earning = true;
+                // if ($earning) {
+                //     if ($earning['status'] === 'canceled' && $new_status === 'paid') {
+                //         $update_instructor_earning = $db->updateData(
+                //             "UPDATE {$db->table['instructor_earnings']}
+                //                         SET `status` = 'pending', updated_at = ?
+                //                     WHERE id = ?",
+                //             [$current_time, $earning['id']]
+                //         );
+                //     } elseif ($earning['status'] !== 'paid' && $new_status !== 'paid') {
+                //         $update_instructor_earning = $db->updateData(
+                //             "UPDATE {$db->table['instructor_earnings']}
+                //                         SET `status` = 'canceled', updated_at = ?
+                //                     WHERE id = ?",
+                //             [$current_time, $earning['id']]
+                //         );
+                //     }
+                // } else {
+                //     if ($new_status === 'paid') {
+                //         $update_instructor_earning = $db->insertData(
+                //             "INSERT INTO {$db->table['instructor_earnings']}
+                //                         (uuid, instructor_id, order_item_id, amount, site_commission, total_price, status, created_at, updated_at)
+                //                     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
+                //             [
+                //                 $earning_uuid,
+                //                 $item['instructor_id'],
+                //                 $item['id'],
+                //                 $instructor_earning_amount,
+                //                 $site_commission,
+                //                 $item['price'],
+                //                 $current_time,
+                //                 $current_time
+                //             ]
+                //         );
+                //     }
+                // }
 
-                $earning = $db->getData(
-                    "SELECT id, status FROM {$db->table['instructor_earnings']} WHERE order_item_id = ?",
-                    [$item['id']]
-                );
-
-                $update_instructor_earning = true;
-                if ($earning) {
-                    if ($earning['status'] === 'canceled' && $new_status === 'paid') {
-                        $update_instructor_earning = $db->updateData(
-                            "UPDATE {$db->table['instructor_earnings']}
-                                        SET status = 'pending', updated_at = ?
-                                    WHERE id = ?",
-                            [$current_time, $earning['id']]
-                        );
-                    } elseif ($earning['status'] !== 'paid' && $new_status !== 'paid') {
-                        $update_instructor_earning = $db->updateData(
-                            "UPDATE {$db->table['instructor_earnings']}
-                                        SET status = 'canceled', updated_at = ?
-                                    WHERE id = ?",
-                            [$current_time, $earning['id']]
-                        );
-                    }
-                } else {
-                    if ($new_status === 'paid') {
-                        $update_instructor_earning = $db->insertData(
-                            "INSERT INTO {$db->table['instructor_earnings']}
-                                        (uuid, instructor_id, order_item_id, amount, site_commission, total_price, status, created_at, updated_at)
-                                    VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
-                            [
-                                $earning_uuid,
-                                $instructor['id'],
-                                $item['id'],
-                                $instructor_earning_amount,
-                                $site_commission,
-                                $item['price'],
-                                $current_time,
-                                $current_time
-                            ]
-                        );
-                    }
-                }
-
-                if (!$update_instructor_earning) {
-                    throw new Exception('خطا در ثبت سهم مدرس');
-                }
+                // if (!$update_instructor_earning) {
+                //     throw new Exception('خطا در ثبت سهم مدرس');
+                // }
             }
 
             $db->commit();
