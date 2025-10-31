@@ -155,6 +155,10 @@ class Login extends Users
             }
         }
 
+        if (!$user['is_active']) {
+            Response::error('متأسفانه حساب کاربری شما غیرفعال شده است');
+        }
+
         $jwt_token = $this->generate_token([
             'user_id' => $user['id'],
             'phone' => $user['phone'],

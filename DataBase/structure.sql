@@ -9,7 +9,7 @@ CREATE TABLE
         password TEXT NOT NULL,
         role ENUM ('user', 'instructor', 'admin') DEFAULT 'user' NOT NULL,
         avatar TEXT,
-        is_active BOOLEAN DEFAULT TRUE,
+        is_active BOOLEAN DEFAULT TRUE NOT NULL,
         registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
     ) ENGINE = InnoDB;
 
