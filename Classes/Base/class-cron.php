@@ -38,6 +38,7 @@ abstract class Cron
             'update-products-statistics' => $_ENV['CRON_UPDATE_PRODUCTS_STATISTICS'] ?? '00:05',
             'update-instructors-statistics' => $_ENV['CRON_UPDATE_INSTRUCTORS_STATISTICS'] ?? '00:10',
             'update-instructor-earnings' => $_ENV['CRON_UPDATE_INSTRUCTOR_EARNINGS'] ?? '00:15',
+            'deactivate-instructors-without-contract' => $_ENV['CRON_DEACTIVATE_INSTRUCTOR_WITHOUT_CONTRACT'] ?? '00:20',
         ];
     }
 

@@ -401,7 +401,7 @@ trait Base
      * @param bool $gmt Flag to determine whether to return the GMT time or local time.
      * @return string The current time in the specified format.
      */
-    public static function current_time($format = 'Y-m-d H:i:s', $gmt = false, $jalali = false, $locale = 'en', $modify = '')
+    public static function current_time($format = 'Y-m-d H:i:s', $jalali = false, $locale = 'en', $modify = '', $gmt = false)
     {
         $timezone = 'Asia/Tehran';
         date_default_timezone_set($timezone);

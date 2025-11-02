@@ -4,6 +4,7 @@ namespace Classes\Users;
 use Classes\Base\Error;
 use Classes\Base\Sanitizer;
 use Classes\Base\Response;
+use Classes\Instructors\Instructors;
 use Exception;
 
 /**
@@ -209,10 +210,15 @@ class Users extends Authentication
                 throw new Exception();
             }
 
+            if ($user['role'] === 'instructor') {
+                $instructors_obj = new Instructors();
+                $instructor = $instructors_obj->get_instructor_by_user_id($user['id']);
+            }
+
             foreach ($roles as $role) {
                 $hasAccess[] = match ($role) {
                     'user' => ($token_decoded->role === 'user' || $token_decoded->role === 'admin'),
-                    'instructor' => ($token_decoded->role === 'instructor' || $token_decoded->role === 'admin'),
+                    'instructor' => (($token_decoded->role === 'instructor' && $instructor && $instructor['status'] != 'inactive') || $token_decoded->role === 'admin'),
                     'admin' => $token_decoded->role === 'admin',
                     default => false,
                 };

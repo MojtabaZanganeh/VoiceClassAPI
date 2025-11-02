@@ -205,7 +205,7 @@ class Support extends Users
                     null,
                     [['name'=> 'قرارداد.docx', 'path' => '/Data/contract.docx']],
                     $templateId,
-                    ["current_year" => 2025]
+                    ["current_year" => $this->current_time('Y', true, 'en')]
                 );
 
                 if ($result !== true) {
