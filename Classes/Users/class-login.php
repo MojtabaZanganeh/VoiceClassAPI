@@ -26,13 +26,24 @@ class Login extends Users
 
         $phone = $params['phone'];
 
-        $user_registered = $this->getData("SELECT id FROM {$this->table['users']} WHERE phone = ?", [$phone]);
+        $user_registered = $this->getData(
+            "SELECT 
+                    u.id,
+                    ac.is_active AS fingerprint
+                FROM {$this->table['users']} u
+                LEFT JOIN {$this->table['authenticator_credentials']} ac ON u.id = ac.user_id
+                WHERE phone = ?",
+            [$phone]
+        );
 
-        if ($user_registered) {
-            Response::success('کاربر ثبت نام کرده است', 'registered', true);
-        } else {
-            Response::success('کاربر ثبت نام نکرده است', 'registered', false);
-        }
+        Response::success(
+            'بررسی ثبت نام کاربر انجام شد',
+            'registerData',
+            [
+                'exists' => $user_registered ? true : false,
+                'hasFingerprint' => $user_registered && $user_registered['fingerprint'] ? true : false
+            ]
+        );
     }
 
     /**
@@ -79,7 +90,7 @@ class Login extends Users
         }
 
         $user_uuid = $this->generate_uuid();
-        
+
         $now = $this->current_time();
 
         $sql = "INSERT INTO {$this->table['users']} (`uuid`, `username`, `phone`, `password`, `registered_at`) VALUES (?, ?, ?, ?, ?)";

@@ -25,6 +25,7 @@ class Database
      * @var array
      */
     public array $table = [
+        'authenticator_credentials' => 'authenticator_credentials',
         'book_details' => 'book_details',
         'cart_items' => 'cart_items',
         'categories' => 'categories',
@@ -45,6 +46,7 @@ class Database
         'order_addresses' => 'order_addresses',
         'order_items' => 'order_items',
         'reviews' => 'reviews',
+        'security_logs' => 'security_logs',
         'support_tickets' => 'support_tickets',
         'support_ticket_messages' => 'support_ticket_messages',
         'transactions' => 'transactions',

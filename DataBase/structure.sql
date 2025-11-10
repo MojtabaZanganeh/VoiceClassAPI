@@ -72,6 +72,42 @@ CREATE TABLE
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
     ) ENGINE = InnoDB;
 
+-- اثر انگشت
+CREATE TABLE
+    authenticator_credentials (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT UNSIGNED NOT NULL,
+        credential_id VARCHAR(255) UNIQUE NOT NULL,
+        public_key LONGBLOB NOT NULL,
+        sign_count INT UNSIGNED DEFAULT 0 NOT NULL,
+        device_name VARCHAR(100) NULL,
+        device_type ENUM ('mobile', 'desktop') NULL,
+        user_agent TEXT NULL,
+        is_active BOOLEAN DEFAULT true NOT NULL,
+        last_used_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    ) ENGINE = InnoDB;
+
+-- لاگ ورود
+CREATE TABLE
+    security_logs (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id INT UNSIGNED NULL DEFAULT NULL,
+        action VARCHAR(100) NOT NULL,
+        details JSON NULL,
+        ip VARCHAR(45) NOT NULL,
+        user_agent TEXT NULL,
+        severity ENUM ('low', 'medium', 'high', 'critical') DEFAULT 'medium' NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_user_id (user_id),
+        INDEX idx_action (action),
+        INDEX idx_ip (ip),
+        INDEX idx_created_at (created_at),
+        INDEX idx_severity (severity),
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL ON UPDATE CASCADE
+    ) ENGINE = InnoDB;
+
 -- دسته بندی ها
 CREATE TABLE
     categories (
@@ -93,7 +129,7 @@ CREATE TABLE
             'admin-deleted'
         ) NOT NULL,
         instructor_active BOOLEAN DEFAULT TRUE NOT NULL,
-        short_link VARCAR(6) UNIQUE NOT NULL,
+        short_link VARCAR (6) UNIQUE NOT NULL,
         slug VARCHAR(100) UNIQUE NOT NULL,
         category_id INT UNSIGNED NOT NULL,
         instructor_id INT UNSIGNED NOT NULL,

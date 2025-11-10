@@ -2,6 +2,8 @@
 namespace Classes\Base;
 
 use Classes\Base\Response;
+use Exception;
+use Throwable;
 
 class Error
 {
@@ -14,7 +16,7 @@ class Error
         set_exception_handler([$this, 'exception_handler']);
     }
 
-    private function format_message(string $type, int | string $code, string $message, string $file, int $line, array $trace = [])
+    private function format_message(string $type, int|string $code, string $message, string $file, int $line, array $trace = [])
     {
         date_default_timezone_set('Asia/Tehran');
         $date = new \DateTime();
@@ -61,7 +63,7 @@ class Error
         $this->throw_log($message);
     }
 
-    public function exception_handler(\Throwable $e)
+    public function exception_handler(Throwable $e)
     {
         $trace = $e->getTrace();
         $exception = $this->format_message('Exception', $e->getCode(), $e->getMessage(), $e->getFile(), $e->getLine(), $trace);
@@ -69,12 +71,17 @@ class Error
         $this->throw_log($e->getMessage());
     }
 
-    public static function log($file_name, $log, $file_type = 'json')
+    public static function log($file_name = '', $log = '', $file_type = 'json', ?Exception $e = null)
     {
-        if ($file_type === 'json') {
-            file_put_contents(__DIR__ . "/../../Logs/$file_name.json", json_encode($log, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-        } elseif ($file_type === 'txt') {
-            file_put_contents("Logs/$file_name.txt", $log);
+        if ($e) {
+            $error = new self();
+            $error->error_handler($e->getCode(), $e->getMessage(), $e->getFile(), $e->getLine());
+        } elseif (!empty($file_name) && !empty($log) && !empty($file_type)) {
+            if ($file_type === 'json') {
+                file_put_contents(__DIR__ . "/../../Logs/$file_name.json", json_encode($log, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            } elseif ($file_type === 'txt') {
+                file_put_contents("Logs/$file_name.txt", $log);
+            }
         }
     }
 }
