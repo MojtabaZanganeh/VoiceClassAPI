@@ -733,22 +733,15 @@ class Fingerprint extends Users
                     'user_id' => $user['id'],
                     'username' => $user['username'],
                     'phone' => $user['phone'],
-                    'role' => 'user',
+                    'role' => $user['role'],
                     'login_method' => 'fingerprint'
                 ]);
 
-                $user_response = [
-                    'id' => $user['id'],
-                    'username' => $user['username'],
-                    'phone' => $user['phone'],
-                    'role' => 'user',
-                    'token' => $jwt_token
-                ];
+                $user['token'] = $jwt_token;
 
-                // حذف چالش استفاده شده
                 $this->redis->delete('webauthn_challenge_' . $challenge_token);
 
-                Response::success('ورود با اثرانگشت موفقیت‌آمیز بود', 'user', $user_response);
+                Response::success('ورود با اثرانگشت انجام شد', 'user', $user);
 
             } catch (Exception $e) {
                 $this->rollback();
