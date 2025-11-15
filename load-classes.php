@@ -1,5 +1,9 @@
 <?php
 
+use Classes\Base\Error;
+
+require_once 'Classes/Base/class-error.php';
+
 /**
  * Autoloads classes dynamically based on their namespace and class name.
  * The function follows a specific directory structure to load class files
@@ -15,11 +19,13 @@
  */
 function classAutoloader($className)
 {
-
+    if (strpos($className, 'Classes\\') !== 0) {
+        return;
+    }
     $className = trim($className, '\\');
     $classNameArray = explode('\\', $className);
     $baseDir = __DIR__ . DIRECTORY_SEPARATOR . $classNameArray[0] . DIRECTORY_SEPARATOR . $classNameArray[1] . DIRECTORY_SEPARATOR;
-    $className = $classNameArray[2];
+    $className = isset($classNameArray[2]) ? $classNameArray[2] : $classNameArray[1];
     $className = strtolower(str_replace('_', "-", $className));
 
     $filePath = $baseDir . 'class-' . $className . '.php';
