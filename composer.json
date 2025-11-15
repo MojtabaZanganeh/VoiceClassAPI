@@ -8,6 +8,7 @@
         "setasign/fpdi": "^2.6",
         "setasign/fpdf": "^1.8",
         "sendpulse/rest-api": "^2.0",
-        "predis/predis": "^3.2"
+        "predis/predis": "^3.2",
+        "web-auth/webauthn-framework": "5.2.2"
     }
 }
