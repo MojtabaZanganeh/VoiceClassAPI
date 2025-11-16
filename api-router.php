@@ -20,7 +20,7 @@ $router->add('/auth/reset-password', 'POST', 'Classes\Users\Login', 'reset_passw
 $router->add('/auth/fingerprint/challenge', 'POST', 'Classes\Users\Fingerprint', 'generate_webauthn_challenge');
 $router->add('/auth/fingerprint/register', 'POST', 'Classes\Users\Fingerprint', 'register_new_fingerprint');
 $router->add('/auth/fingerprint/login', 'POST', 'Classes\Users\Fingerprint', 'login_with_fingerprint');
-$router->add('/auth/fingerprint/delete', 'POST', 'Classes\Users\Fingerprint', 'delete_fingerprint');
+$router->add('/auth/fingerprint/delete', 'GET', 'Classes\Users\Fingerprint', 'delete_fingerprint');
 $router->add('/auth/fingerprint/get', 'GET', 'Classes\Users\Fingerprint', 'get_fingerprints');
 
 $router->add('/users/get-shipping-info', 'GET', 'Classes\Users\Profile', 'get_shipping_info');

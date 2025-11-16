@@ -60,7 +60,7 @@ class Fingerprint extends Users implements PublicKeyCredentialSourceRepositoryIn
         try {
             $this->rpEntity = new PublicKeyCredentialRpEntity(
                 'وویس کلاس',
-                $_SERVER['HTTP_HOST'] ?? 'voiceclass.ir'
+                $_ENV['MAIN_DOMAIN']
             );
 
             $this->algorithmManager = AlgorithmManager::create()
@@ -182,16 +182,16 @@ class Fingerprint extends Users implements PublicKeyCredentialSourceRepositoryIn
                 'trustPath' => $publicKeyCredentialSource->trustPath,
                 'aaguid' => $publicKeyCredentialSource->aaguid,
                 'credentialPublicKey' => base64_encode($publicKeyCredentialSource->credentialPublicKey),
-                'userHandle' => $publicKeyCredentialSource->userHandle,
+                'userHandle' => base64_encode($publicKeyCredentialSource->userHandle),
                 'counter' => $publicKeyCredentialSource->counter
             ]);
 
             if ($existing) {
                 $this->updateData(
                     "UPDATE {$this->table['authenticator_credentials']} 
-                    SET credential_data = ?, sign_count = ?, updated_at = NOW() 
+                    SET credential_data = ?, sign_count = ?, updated_at = ?
                     WHERE credential_id = ?",
-                    [$credentialData, $publicKeyCredentialSource->counter, $credentialId]
+                    [$credentialData, $publicKeyCredentialSource->counter, $this->current_time(), $credentialId]
                 );
             } else {
                 $this->insertData(
@@ -630,9 +630,9 @@ class Fingerprint extends Users implements PublicKeyCredentialSourceRepositoryIn
 
                 $update_data = $this->updateData(
                     "UPDATE {$this->table['authenticator_credentials']} 
-                    SET last_used_at = NOW() 
+                    SET last_used_at = ?
                     WHERE credential_id = ?",
-                    [$credentialId]
+                    [$this->current_time(), $credentialId]
                 );
 
                 if (!$update_data) {
@@ -692,9 +692,6 @@ class Fingerprint extends Users implements PublicKeyCredentialSourceRepositoryIn
     {
         try {
             $user = $this->check_role();
-            if (!$user) {
-                Response::error('کاربر لاگین نیست');
-            }
 
             $this->check_params($params, ['credential_id']);
             $credentialId = $params['credential_id'];
@@ -710,9 +707,9 @@ class Fingerprint extends Users implements PublicKeyCredentialSourceRepositoryIn
             try {
                 $result = $this->updateData("
                     UPDATE {$this->table['authenticator_credentials']} 
-                    SET is_active = 0, deleted_at = NOW() 
+                    SET is_active = 0, deleted_at = ? 
                     WHERE credential_id = ? AND user_id = ? AND is_active = 1
-                ", [$credentialId, $user['id']]);
+                ", [$this->current_time(),$credentialId, $user['id']]);
 
                 if ($result) {
                     $this->insertData(
@@ -759,7 +756,7 @@ class Fingerprint extends Users implements PublicKeyCredentialSourceRepositoryIn
 
             $fingerprints = $this->getData("
                 SELECT id, credential_id, device_name, device_type, 
-                       sign_count, last_used_at, created_at, aaguid, attestation_format
+                       sign_count, last_used_at, created_at, aaguid, attestation_format, is_active
                 FROM {$this->table['authenticator_credentials']} 
                 WHERE user_id = ? AND is_active = 1
                 ORDER BY created_at DESC
@@ -768,15 +765,6 @@ class Fingerprint extends Users implements PublicKeyCredentialSourceRepositoryIn
             if ($fingerprints) {
                 foreach ($fingerprints as &$fp) {
                     $fp['credential_id_masked'] = substr($fp['credential_id'], 0, 8) . '...';
-                    if ($fp['aaguid']) {
-                        $aaguid = $fp['aaguid'];
-                        $fp['aaguid_formatted'] =
-                            substr($aaguid, 0, 8) . '-' .
-                            substr($aaguid, 8, 4) . '-' .
-                            substr($aaguid, 12, 4) . '-' .
-                            substr($aaguid, 16, 4) . '-' .
-                            substr($aaguid, 20);
-                    }
                 }
             }
 
