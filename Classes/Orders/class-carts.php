@@ -13,7 +13,7 @@ class Carts extends Users
 {
     use Base, Sanitizer;
 
-    public function add_cart_item($params, $response = true)
+    public function add_cart_item($params)
     {
         $user = $this->check_role();
 
@@ -22,6 +22,7 @@ class Carts extends Users
         $item_uuid = $params['uuid'];
         $item_access_type = $params['access_type'];
         $item_quantity = $params['quantity'];
+        $return = !empty($params['return']) ? true : false;
 
         $product = $this->getData("SELECT `id`, `status`, `instructor_active` FROM {$this->table['products']} WHERE uuid = ?", [$item_uuid]);
         if (!$product) {
@@ -41,10 +42,10 @@ class Carts extends Users
             [$user['id'], $product['id'], $item_access_type]
         );
         if ($exist_item) {
-            if ($response) {
-                Response::error('محصول قبلا به سبد خرید اضافه شده است');
+            if ($return) {
+                return false;
             }
-            return false;
+            Response::error('محصول قبلا به سبد خرید اضافه شده است');
         }
 
         $item_id = $this->insertData(
@@ -59,17 +60,17 @@ class Carts extends Users
         );
 
         if ($item_id) {
-            if ($response) {
-                $cart_items = $this->get_cart_items(['return' => true]);
-                Response::success('محصول به سبد خرید افزوده شد', 'userCart', $cart_items);
+            if ($return) {
+                return true;
             }
-            return false;
+            $cart_items = $this->get_cart_items(['return' => true]);
+            Response::success('محصول به سبد خرید افزوده شد', 'userCart', $cart_items);
         }
 
-        if ($response) {
-            Response::error('خطا در افزودن محصول به سبد خرید');
+        if ($return) {
+            return false;
         }
-        return false;
+        Response::error('خطا در افزودن محصول به سبد خرید');
     }
 
     public function remove_cart_item($params)
@@ -137,9 +138,9 @@ class Carts extends Users
                 [
                     'uuid' => $item['uuid'],
                     'access_type' => $item['access_type'],
-                    'quantity' => $item['quantity']
-                ],
-                false
+                    'quantity' => $item['quantity'],
+                    'return' => true,
+                ]
             );
         }
 
@@ -151,7 +152,8 @@ class Carts extends Users
     {
         $user = $this->check_role();
 
-        $get_product_id = isset($params['return']) ? 'p.id,' : '';
+        $return = !empty($params['return']) ? true : false;
+        $get_product_id = $return ? 'p.id,' : '';
 
         $sql = "SELECT 
                     $get_product_id
@@ -192,7 +194,7 @@ class Carts extends Users
         $cart_items = $this->getData($sql, [$user['id']], true);
 
         if (!$cart_items) {
-            if (isset($params['return']) && $params['return'] === true) {
+            if ($return) {
                 return [];
             }
             Response::success('سبد خرید خالی است', 'userCart', []);
@@ -202,7 +204,7 @@ class Carts extends Users
             $item['thumbnail'] = $this->get_full_image_url($item['thumbnail']);
         }
 
-        if (isset($params['return']) && $params['return'] === true) {
+        if ($return) {
             return $cart_items;
         }
         Response::success('سبد خرید دریافت شد', 'userCart', $cart_items);
