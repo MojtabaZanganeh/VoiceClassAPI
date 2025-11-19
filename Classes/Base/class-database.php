@@ -25,6 +25,11 @@ class Database
      * @var array
      */
     public array $table = [
+        'assessments' => 'assessments',
+        'assessment_questions' => 'assessment_questions',
+        'assessment_question_options' => 'assessment_question_options',
+        'assessment_submissions' => 'assessment_submissions',
+        'assessment_submission_answers' => 'assessment_submission_answers',
         'authenticator_credentials' => 'authenticator_credentials',
         'book_details' => 'book_details',
         'cart_items' => 'cart_items',

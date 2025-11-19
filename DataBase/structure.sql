@@ -215,6 +215,83 @@ CREATE TABLE
         FOREIGN KEY (chapter_id) REFERENCES chapters (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
+-- تمارین و امتحانات
+CREATE TABLE
+    assessments (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
+        product_id INT UNSIGNED NOT NULL,
+        chapter_id INT UNSIGNED DEFAULT NULL,
+        lesson_id INT UNSIGNED DEFAULT NULL,
+        type ENUM ('exercise', 'exam') NOT NULL,
+        is_required BOOLEAN DEFAULT FALSE NOT NULL,
+        unlock_next BOOLEAN DEFAULT FALSE NOT NULL,
+        format ENUM ('zip', 'test', 'essay', 'mixed') NOT NULL,
+        title VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        duration INT UNSIGNED DEFAULT NULL,
+        max_score INT UNSIGNED NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+        FOREIGN KEY (chapter_id) REFERENCES chapters (id) ON DELETE CASCADE,
+        FOREIGN KEY (lesson_id) REFERENCES chapter_lessons (id) ON DELETE CASCADE
+    ) ENGINE = InnoDB;
+
+-- سوالات امتحان
+CREATE TABLE
+    assessment_questions (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        assessment_id INT UNSIGNED NOT NULL,
+        type ENUM ('test', 'essay') NOT NULL,
+        question TEXT NOT NULL,
+        score INT UNSIGNED NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (assessment_id) REFERENCES assessments (id) ON DELETE CASCADE
+    ) ENGINE = InnoDB;
+
+-- گزینه های سوال تستی
+CREATE TABLE
+    assessment_question_options (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        question_id INT UNSIGNED NOT NULL,
+        option_text VARCHAR(255) NOT NULL,
+        is_correct BOOLEAN DEFAULT FALSE NOT NULL,
+        FOREIGN KEY (question_id) REFERENCES assessment_questions (id) ON DELETE CASCADE
+    ) ENGINE = InnoDB;
+
+-- ارسالی های دانشجو مربوط به تمرین یا امتحان
+CREATE TABLE
+    assessment_submissions (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
+        assessment_id INT UNSIGNED NOT NULL,
+        user_id INT UNSIGNED NOT NULL,
+        file_link TEXT DEFAULT NULL,
+        started_at TIMESTAMP NULL,
+        submitted_at TIMESTAMP NULL,
+        auto_score INT UNSIGNED DEFAULT 0 NOT NULL,
+        manual_score INT UNSIGNED DEFAULT 0 NOT NULL,
+        final_score INT UNSIGNED GENERATED ALWAYS AS (auto_score + manual_score) STORED,
+        status ENUM ('pending', 'reviewing', 'completed') DEFAULT 'pending',
+        FOREIGN KEY (assessment_id) REFERENCES assessments (id),
+        FOREIGN KEY (user_id) REFERENCES users (id)
+    ) ENGINE = InnoDB;
+
+-- پاسخ های سوالات امتحان
+CREATE TABLE
+    assessment_submission_answers (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        submission_id INT UNSIGNED NOT NULL,
+        question_id INT UNSIGNED NOT NULL,
+        answer_text TEXT NULL,
+        selected_option_id INT UNSIGNED NULL,
+        auto_correct BOOLEAN DEFAULT NULL,
+        FOREIGN KEY (submission_id) REFERENCES assessment_submissions (id) ON DELETE CASCADE,
+        FOREIGN KEY (question_id) REFERENCES assessment_questions (id) ON DELETE CASCADE,
+        FOREIGN KEY (selected_option_id) REFERENCES assessment_question_options (id)
+    ) ENGINE = InnoDB;
+
 -- مدرس ها
 CREATE TABLE
     instructors (
