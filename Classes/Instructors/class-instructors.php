@@ -68,7 +68,9 @@ class Instructors extends Users
             $first_name = $this->check_input($params['first_name'], 'fa_name', 'نام');
             $last_name = $this->check_input($params['last_name'], 'fa_name', 'نام خانوادگی');
 
-            $phone = !empty($params['phone']) ? $this->check_input($params['phone'], 'phone', 'شماره تماس') : null;
+            $random_phone = $this->get_random('int', 11, $this->table['users'], 'phone');
+
+            $phone = !empty($params['phone']) ? $this->check_input($params['phone'], 'phone', 'شماره تماس') : $random_phone;
             $user_by_phone = $this->get_user_by_phone($phone);
             if ($user_by_phone) {
                 Response::error('شماره قبلاً ثبت شده است.', null, 400, $db);
@@ -89,10 +91,7 @@ class Instructors extends Users
             }
 
             $user_uuid = $this->generate_uuid();
-            $username =
-                $phone
-                ? "user-$phone"
-                : "guest_user_" . $this->get_random('int', 11, $this->table['users'], 'username');
+            $username = $phone ? "user-$phone" : "guest_user_$random_phone";
             $password = $this->get_random('pass', 12);
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
@@ -259,13 +258,9 @@ class Instructors extends Users
             true
         );
 
-        if (!$instructor_products) {
-            Response::error('خطا در دریافت محصولات مدرس', null, 500, $db);
-        }
+        if ($instructor_products) {
+            $instructor_active = $status === 'active' ? 1 : 0;
 
-        $instructor_active = $status === 'active' ? 1 : 0;
-
-        foreach ($instructor_products as $product) {
             $update_instructor_active = $db->updateData(
                 "UPDATE {$db->table['products']} SET `instructor_active` = ? WHERE `instructor_id` = ?",
                 [
