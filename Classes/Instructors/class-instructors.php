@@ -89,7 +89,10 @@ class Instructors extends Users
             }
 
             $user_uuid = $this->generate_uuid();
-            $username = $phone ? "user-$phone" : "guest_user";
+            $username =
+                $phone
+                ? "user-$phone"
+                : "guest_user_" . $this->get_random('int', 11, $this->table['users'], 'username');
             $password = $this->get_random('pass', 12);
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
