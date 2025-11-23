@@ -231,6 +231,7 @@ CREATE TABLE
         description TEXT NOT NULL,
         duration INT UNSIGNED DEFAULT NULL,
         max_score INT UNSIGNED NOT NULL,
+        status ENUM ('not-started','in-progress','completed','time-expired') NOT NULL DEFAULT 'not-started';
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
@@ -260,7 +261,7 @@ CREATE TABLE
         FOREIGN KEY (question_id) REFERENCES assessment_questions (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
--- ارسالی های دانشجو مربوط به تمرین یا امتحان
+-- ارسالی های دانشجو مربوط به ارزیابی ها
 CREATE TABLE
     assessment_submissions (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -287,6 +288,7 @@ CREATE TABLE
         answer_text TEXT NULL,
         selected_option_id INT UNSIGNED NULL,
         auto_correct BOOLEAN DEFAULT NULL,
+        instructor_note TEXT NULL,
         FOREIGN KEY (submission_id) REFERENCES assessment_submissions (id) ON DELETE CASCADE,
         FOREIGN KEY (question_id) REFERENCES assessment_questions (id) ON DELETE CASCADE,
         FOREIGN KEY (selected_option_id) REFERENCES assessment_question_options (id)
