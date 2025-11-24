@@ -256,7 +256,7 @@ class Products extends Users
                 $this->check_instructor_permission($instructor['id'], $slug);
             }
 
-            $digital_link = ' dt.digital_link, ';
+            $digital_link = !empty($typeConfig['details_table']) && $typeConfig['details_table'] === 'book_details' ? ' dt.digital_link, ' : '';
             $additional_where = '';
         }
 
