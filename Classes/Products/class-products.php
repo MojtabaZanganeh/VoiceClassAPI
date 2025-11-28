@@ -753,6 +753,15 @@ class Products extends Users
             if ($product_type === 'book') {
                 $book_path = 'Uploads/Books/';
 
+                $current_book = $this->getData(
+                    "SELECT digital_link, demo_link, pages, format, size
+                            FROM {$this->table['book_details']} 
+                            WHERE product_id = ?",
+                    [$product_id]
+                );
+
+                $file_changed = false;
+
                 if (!empty($params['digital_link'])) {
                     $full_book_filename = basename($params['digital_link']);
                     $full_book = $this->check_input(
@@ -763,8 +772,8 @@ class Products extends Users
                     );
 
                     $full_book_url = $book_path . $full_book;
-                    $full_book_uuid = explode('.', $full_book)[0];
-                    $full_book_files = glob("{$book_path}{$full_book_uuid}-*.*");
+                    $full_book_uuid = explode('.', string: $full_book)[0];
+                    $full_book_files = glob("{$temp_path}{$full_book_uuid}-*.*");
 
                     $new_book_file = true;
                     if (empty($full_book_files)) {
@@ -777,58 +786,80 @@ class Products extends Users
                     }
 
                     $full_book_temp = $full_book_files[0];
-                    $demo_pdf = new Fpdi();
-                    $pages = $demo_pdf->setSourceFile($full_book_temp);
 
-                    if ($pages < 5) {
-                        throw new Exception('جزوه نباید کمتر از ۵ صفحه باشد');
+                    $file_changed = true;
+                    if ($current_book && $current_book['digital_link'] === $full_book_url) {
+                        $file_changed = false;
                     }
 
-                    $size = round(filesize($full_book_temp) / 1024 / 1024, 2);
-                    $format = strtoupper(pathinfo($full_book, PATHINFO_EXTENSION));
+                    if ($file_changed) {
+                        $demo_pdf = new Fpdi();
+                        $pages = $demo_pdf->setSourceFile($full_book_temp);
 
-                    $existing_book = $this->getData(
-                        "SELECT digital_link, demo_link 
-                     FROM {$this->table['book_details']} 
-                     WHERE product_id = ?",
-                        [$product_id]
-                    );
-
-                    if ($existing_book) {
-                        if (!empty($existing_book['digital_link']) && file_exists($existing_book['digital_link'])) {
-                            unlink($existing_book['digital_link']);
+                        if ($pages < 5) {
+                            throw new Exception('جزوه نباید کمتر از ۵ صفحه باشد');
                         }
 
-                        if (!empty($existing_book['demo_link']) && file_exists($existing_book['demo_link'])) {
-                            unlink($existing_book['demo_link']);
+                        $size = round(filesize($full_book_temp) / 1024 / 1024, 2);
+                        $format = strtoupper(pathinfo($full_book, PATHINFO_EXTENSION));
+
+                        if ($current_book) {
+                            if (!empty($current_book['digital_link']) && file_exists($current_book['digital_link'])) {
+                                unlink($current_book['digital_link']);
+                            }
+
+                            if (!empty($current_book['demo_link']) && file_exists($current_book['demo_link'])) {
+                                unlink($current_book['demo_link']);
+                            }
                         }
+
+                        $all_pages = range(1, $pages);
+                        $selected_pages = array_slice($all_pages, 0, $pages < 20 ? 3 : 5);
+
+                        foreach ($selected_pages as $page_num) {
+                            $templateId = $demo_pdf->importPage($page_num);
+                            $demo_size = $demo_pdf->getTemplateSize($templateId);
+                            $demo_pdf->AddPage($demo_size['orientation'], [$demo_size['width'], $demo_size['height']]);
+                            $demo_pdf->useTemplate($templateId);
+                        }
+
+                        $demo_uuid = $this->generate_uuid();
+                        $demo_book_url = $book_path . $demo_uuid . '.' . strtolower($format);
+                        $demo_pdf->Output('F', $demo_book_url);
+
+                        if ($new_book_file) {
+                            $this->move_file_by_uuid($full_book_uuid, $temp_path, $book_path, $db, 'جزوه بارگذاری نشده است');
+                        }
+
+                        $book_details = [
+                            'pages' => $pages,
+                            'format' => $format,
+                            'size' => $size,
+                            'demo_link' => $demo_book_url,
+                            'digital_link' => $full_book_url
+                        ];
                     }
-
-                    $all_pages = range(1, $pages);
-                    $selected_pages = array_slice($all_pages, 0, $pages < 20 ? 3 : 5);
-
-                    foreach ($selected_pages as $page_num) {
-                        $templateId = $demo_pdf->importPage($page_num);
-                        $demo_size = $demo_pdf->getTemplateSize($templateId);
-                        $demo_pdf->AddPage($demo_size['orientation'], [$demo_size['width'], $demo_size['height']]);
-                        $demo_pdf->useTemplate($templateId);
+                    else {
+                        $book_details = [
+                            'pages' => $current_book['pages'],
+                            'format' => $current_book['format'],
+                            'size' => $current_book['size'],
+                            'demo_link' => $current_book['demo_link'],
+                            'digital_link' => $current_book['digital_link']
+                        ];
                     }
-
-                    $demo_uuid = $this->generate_uuid();
-                    $demo_book_url = $book_path . $demo_uuid . '.' . strtolower($format);
-                    $demo_pdf->Output('F', $demo_book_url);
-
-                    if ($new_book_file) {
-                        $this->move_file_by_uuid($full_book_uuid, $temp_path, $book_path, $db, 'جزوه بارگذاری نشده است');
-                    }
-
+                }
+                else if ($current_book) {
                     $book_details = [
-                        'pages' => $pages,
-                        'format' => $format,
-                        'size' => $size,
-                        'demo_link' => $demo_book_url,
-                        'digital_link' => $full_book_url
+                        'pages' => $current_book['pages'],
+                        'format' => $current_book['format'],
+                        'size' => $current_book['size'],
+                        'demo_link' => $current_book['demo_link'],
+                        'digital_link' => $current_book['digital_link']
                     ];
+                }
+                else {
+                    throw new Exception('فایل جزوه ارسال نشده است');
                 }
             }
 
