@@ -6,6 +6,7 @@ use Classes\Base\Error;
 use Classes\Base\Response;
 use Classes\Base\Sanitizer;
 use Classes\Base\Database;
+use Classes\Instructors\Instructors;
 use Classes\Users\Users;
 use Exception;
 
@@ -17,7 +18,8 @@ class Chapters extends Products
     {
         $this->check_params($params, ['product_uuid']);
 
-        $product = $this->getData("SELECT id FROM {$this->table['products']} WHERE uuid = ?", [$params['product_uuid']]);
+        $product = $this->getData("SELECT id, slug FROM {$this->table['products']} WHERE uuid = ?", [$params['product_uuid']]);
+
         if (!$product) {
             Response::error('شما به این دوره دسترسی ندارید');
         }
@@ -25,19 +27,25 @@ class Chapters extends Products
         $course_student = false;
         if (isset($params['student']) && $params['student'] === 'true') {
             $user = $this->check_role();
+
             $user_order = $this->getData(
                 "SELECT 
-                o.id AS order_id,
-                oi.id AS order_item_id,
-                oi.status
-            FROM {$this->table['orders']} o
-            JOIN {$this->table['order_items']} oi ON o.id = oi.order_id
-            WHERE o.user_id = ? AND oi.product_id = ?
-            LIMIT 1",
-                [$user['id'], $product['id']]
+                        o.id AS order_id,
+                        oi.id AS order_item_id,
+                        oi.status
+                    FROM {$this->table['orders']} o
+                    JOIN {$this->table['order_items']} oi ON o.id = oi.order_id
+                        WHERE o.user_id = ? AND oi.product_id = ? AND oi.status = ?
+                    LIMIT 1",
+                [$user['id'], $product['id'], 'completed']
             );
 
-            if ($user_order && $user_order['status'] === 'completed') {
+            if ($user_order || $user['role'] === 'instructor' || $user['role'] === 'admin') {
+                if ($user['role'] === 'instructor') {
+                    $instructor_obj = new Instructors();
+                    $instructor = $instructor_obj->get_instructor_by_user_id($user['id']);
+                    $instructor_obj->check_instructor_permission($instructor['id'], $product['slug']);
+                }
                 $course_student = true;
             }
 
@@ -56,257 +64,22 @@ class Chapters extends Products
             Response::error('خطا در دریافت سرفصل‌ها');
         }
 
-        $completed_assessments = [];
-        if ($course_student) {
-            $submissions_sql = "SELECT 
-                                asub.assessment_id,
-                                asub.status,
-                                asub.final_score,
-                                a.max_score
-                            FROM {$this->table['assessment_submissions']} asub
-                            JOIN {$this->table['assessments']} a ON asub.assessment_id = a.id
-                            WHERE asub.user_id = ? AND a.product_id = ? AND asub.status = 'completed'";
-            $submissions = $this->getData($submissions_sql, [$user['id'], $product['id']], true);
-
-            if ($submissions) {
-                foreach ($submissions as $sub) {
-                    $completed_assessments[$sub['assessment_id']] = true;
-                }
-            }
-        }
-
-        $assessments_sql = "SELECT 
-                            id,
-                            uuid, 
-                            chapter_id, 
-                            lesson_id, 
-                            type,
-                            title, 
-                            description, 
-                            format, 
-                            max_score, 
-                            duration,
-                            is_required,
-                            unlock_next
-                        FROM {$this->table['assessments']} 
-                        WHERE product_id = ?
-                        ORDER BY id ASC";
-        $all_assessments = $this->getData($assessments_sql, [$product['id']], true);
-
-        $chapter_assessments = [];
-        $lesson_assessments = [];
-
-        if ($all_assessments) {
-            foreach ($all_assessments as $assessment) {
-                $assessment_data = [
-                    'id' => (int) $assessment['id'],
-                    'uuid' => $assessment['uuid'],
-                    'type' => $assessment['type'],
-                    'title' => $assessment['title'],
-                    'description' => $assessment['description'],
-                    'format' => $assessment['format'],
-                    'max_score' => (int) $assessment['max_score'],
-                    'duration' => $assessment['duration'] ? (int) $assessment['duration'] : null,
-                    'is_required' => (bool) $assessment['is_required'],
-                    'unlock_next' => (bool) $assessment['unlock_next']
-                ];
-
-                if (in_array($assessment['format'], ['test', 'essay', 'mixed'])) {
-                    $questions_sql = "SELECT id, type, question, score 
-                                 FROM {$this->table['assessment_questions']} 
-                                 WHERE assessment_id = ?";
-                    $questions = $this->getData($questions_sql, [$assessment['id']], true);
-
-                    if ($questions) {
-                        foreach ($questions as &$question) {
-                            $question['id'] = (int) $question['id'];
-                            $question['score'] = (int) $question['score'];
-
-                            if ($question['type'] === 'test') {
-                                $options_sql = "SELECT id, option_text, is_correct 
-                                          FROM {$this->table['assessment_question_options']} 
-                                          WHERE question_id = ?";
-                                $options = $this->getData($options_sql, [$question['id']], true);
-
-                                if ($options) {
-                                    $question['options'] = array_map(function ($opt) {
-                                        return [
-                                            'id' => (int) $opt['id'],
-                                            'text' => $opt['option_text'],
-                                            'is_correct' => (bool) $opt['is_correct']
-                                        ];
-                                    }, $options);
-                                }
-                            }
-                        }
-                        $assessment_data['questions'] = $questions;
-                    }
-                }
-
-                if ($assessment['chapter_id'] && !$assessment['lesson_id']) {
-                    $chapter_id = $assessment['chapter_id'];
-                    if (!isset($chapter_assessments[$chapter_id])) {
-                        $chapter_assessments[$chapter_id] = ['exercise' => [], 'exam' => []];
-                    }
-                    $chapter_assessments[$chapter_id][$assessment['type']][] = $assessment_data;
-                }
-
-                if ($assessment['lesson_id']) {
-                    $lesson_id = $assessment['lesson_id'];
-                    if (!isset($lesson_assessments[$lesson_id])) {
-                        $lesson_assessments[$lesson_id] = ['exercise' => [], 'exam' => []];
-                    }
-                    $lesson_assessments[$lesson_id][$assessment['type']][] = $assessment_data;
-                }
-            }
-        }
-
-        $first_blocking_chapter_id = null;
-        $first_blocking_lesson_id = null;
-        $blocking_chapter_id = null;
-        $found_blocker = false;
-
-        foreach ($chapters as $chapter) {
-            if ($found_blocker)
-                break;
-
-            if (isset($chapter_assessments[$chapter['id']])) {
-                foreach (['exercise', 'exam'] as $type) {
-                    if ($found_blocker)
-                        break;
-                    foreach ($chapter_assessments[$chapter['id']][$type] as $assessment) {
-                        if ($assessment['unlock_next'] && !isset($completed_assessments[$assessment['id']])) {
-                            $first_blocking_chapter_id = $chapter['id'];
-                            $found_blocker = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            $lessons_sql = "SELECT id 
-                       FROM {$this->table['chapter_lessons']} 
-                       WHERE chapter_id = ?
-                       ORDER BY id ASC";
-            $chapter_lessons = $this->getData($lessons_sql, [$chapter['id']], true);
-
-            if ($chapter_lessons) {
-                foreach ($chapter_lessons as $lesson) {
-                    if ($found_blocker)
-                        break;
-
-                    if (isset($lesson_assessments[$lesson['id']])) {
-                        foreach (['exercise', 'exam'] as $type) {
-                            if ($found_blocker)
-                                break;
-                            foreach ($lesson_assessments[$lesson['id']][$type] as $assessment) {
-                                if ($assessment['unlock_next'] && !isset($completed_assessments[$assessment['id']])) {
-                                    $first_blocking_lesson_id = $lesson['id'];
-                                    $blocking_chapter_id = $chapter['id'];
-                                    $found_blocker = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         foreach ($chapters as &$chapter) {
-            $chapter_locked = false;
-
-            if ($first_blocking_chapter_id && $chapter['id'] > $first_blocking_chapter_id) {
-                $chapter_locked = true;
-            }
-
-            if ($blocking_chapter_id && $chapter['id'] > $blocking_chapter_id) {
-                $chapter_locked = true;
-            }
-
             $lessons_sql = "SELECT 
-                            id, title, `length`, free
-                        FROM {$this->table['chapter_lessons']} 
-                        WHERE chapter_id = ?
-                        ORDER BY id ASC";
-            $lessons = $this->getData($lessons_sql, [$chapter['id']], true);
+                                id, title, `length`, free,
+                                CASE 
+                                    WHEN free = 1 OR ? = 1 THEN link 
+                                    ELSE NULL 
+                                END AS link,
+                                CASE 
+                                    WHEN free = 1 OR ? = 1 THEN size 
+                                    ELSE NULL 
+                                END AS size
+                            FROM {$this->table['chapter_lessons']} 
+                            WHERE chapter_id = ?
+                        ";
 
-            $chapter['lessons_detail'] = [];
-
-            if ($lessons) {
-                foreach ($lessons as $lesson) {
-                    $lesson_locked = $chapter_locked;
-
-                    if (
-                        $blocking_chapter_id && $chapter['id'] == $blocking_chapter_id &&
-                        $first_blocking_lesson_id && $lesson['id'] > $first_blocking_lesson_id
-                    ) {
-                        $lesson_locked = true;
-                    }
-
-                    $lesson_data = [
-                        'id' => (int) $lesson['id'],
-                        'title' => $lesson['title'],
-                        'length' => (int) $lesson['length'],
-                        'free' => (bool) $lesson['free']
-                    ];
-
-                    if (($lesson['free'] || $course_student) && !$lesson_locked) {
-                        $link_size_sql = "SELECT link, size 
-                                     FROM {$this->table['chapter_lessons']} 
-                                     WHERE id = ?";
-                        $link_size = $this->getData($link_size_sql, [$lesson['id']]);
-                        if ($link_size) {
-                            $lesson_data['link'] = $link_size['link'];
-                            $lesson_data['size'] = $link_size['size'] ? (int) $link_size['size'] : null;
-                        }
-                    }
-
-                    if (isset($lesson_assessments[$lesson['id']])) {
-                        foreach (['exercise', 'exam'] as $type) {
-                            if (!empty($lesson_assessments[$lesson['id']][$type])) {
-                                $lesson_data[$type] = array_map(function ($assessment) use ($lesson_locked, $first_blocking_lesson_id, $lesson) {
-                                    if ($first_blocking_lesson_id && $lesson['id'] > $first_blocking_lesson_id) {
-                                        $assessment['lock'] = true;
-                                    } else {
-                                        $assessment['lock'] = $lesson_locked;
-                                    }
-                                    return $assessment;
-                                }, $lesson_assessments[$lesson['id']][$type]);
-                            }
-                        }
-                    }
-
-                    if ($lesson_locked) {
-                        $lesson_data['lock'] = true;
-                    }
-
-                    $chapter['lessons_detail'][] = $lesson_data;
-                }
-            }
-
-            if (isset($chapter_assessments[$chapter['id']])) {
-                foreach (['exercise', 'exam'] as $type) {
-                    if (!empty($chapter_assessments[$chapter['id']][$type])) {
-                        $chapter[$type] = array_map(function ($assessment) use ($chapter_locked, $blocking_chapter_id, $chapter) {
-                            if ($blocking_chapter_id && $chapter['id'] == $blocking_chapter_id) {
-                                $assessment['lock'] = true;
-                            } else {
-                                $assessment['lock'] = $chapter_locked;
-                            }
-                            return $assessment;
-                        }, $chapter_assessments[$chapter['id']][$type]);
-                    }
-                }
-            }
-
-            if ($chapter_locked) {
-                $chapter['lock'] = true;
-            }
-
-            $chapter['id'] = (int) $chapter['id'];
-            $chapter['lessons_count'] = (int) $chapter['lessons_count'];
-            $chapter['chapter_length'] = (int) $chapter['chapter_length'];
+            $chapter['lessons_detail'] = $this->getData($lessons_sql, [$course_student ? 1 : 0, $course_student ? 1 : 0, $chapter['id']], true) ?: [];
         }
 
         if (!empty($params['return'])) {

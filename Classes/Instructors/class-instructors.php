@@ -40,6 +40,15 @@ class Instructors extends Users
         return $instructor;
     }
 
+    public function check_instructor_permission($instructor_id, $product_slug)
+    {
+        $product = $this->getData("SELECT instructor_id FROM {$this->table['products']} WHERE slug = ?", [$product_slug]);
+        if ($product && $product['instructor_id'] === $instructor_id) {
+            return true;
+        }
+        Response::error('شما دسترسی لازم به این محتوا را ندارید');
+    }
+
     public function add_new_instructor($params)
     {
         $admin = $this->check_role(['admin']);

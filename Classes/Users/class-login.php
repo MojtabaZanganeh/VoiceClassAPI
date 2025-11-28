@@ -75,8 +75,13 @@ class Login extends Users
 
         if (mb_strlen($password, 'UTF-8') < 8) {
             Response::error('رمز عبور کوتاه است');
-        } elseif (!preg_match('/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/', $password)) {
-            Response::error('رمز عبور باید شامل حداقل یک حرف بزرگ، یک عدد و یک نماد باشد');
+        } elseif (
+            !preg_match(
+                '/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[\x20-\x7E]{8,}$/',
+                $password
+            )
+        ) {
+            Response::error('رمز عبور باید شامل حداقل یک حرف بزرگ، یک عدد و یک نماد باشد و از کاراکترهای غیرمجاز استفاده نشود');
         }
 
         $code = $params['code'];
@@ -86,7 +91,7 @@ class Login extends Users
 
         $user_by_phone = $this->get_user_by_phone($phone);
         if ($user_by_phone) {
-            Response::error('شماره قبلاً ثبت شده است.');
+            Response::error('شماره قبلاً ثبت شده است');
         }
 
         $user_uuid = $this->generate_uuid();

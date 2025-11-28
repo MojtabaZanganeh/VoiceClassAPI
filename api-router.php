@@ -17,6 +17,7 @@ $router->add('/auth/check-register', 'POST', 'Classes\Users\Login', 'check_user_
 $router->add('/auth/login', 'POST', 'Classes\Users\Login', 'user_login');
 $router->add('/auth/verify-token', 'POST', 'Classes\Users\Login', 'user_validate');
 $router->add('/auth/reset-password', 'POST', 'Classes\Users\Login', 'reset_password');
+
 $router->add('/auth/fingerprint/challenge', 'POST', 'Classes\Users\Fingerprint', 'generate_webauthn_challenge');
 $router->add('/auth/fingerprint/register', 'POST', 'Classes\Users\Fingerprint', 'register_new_fingerprint');
 $router->add('/auth/fingerprint/login', 'POST', 'Classes\Users\Fingerprint', 'login_with_fingerprint');
@@ -32,6 +33,7 @@ $router->add('/instructors/add-new-instructor', 'POST', 'Classes\Instructors\Ins
 $router->add('/instructors/update-instructor-info', 'POST', 'Classes\Instructors\Instructors', 'update_instructor_info');
 $router->add('/instructors/get-all', 'GET', 'Classes\Instructors\Instructors', 'get_instructors');
 $router->add('/instructors/get-stats', 'GET', 'Classes\Instructors\Instructors', 'get_instructor_stats');
+
 $router->add('/instructors/admin-login', 'POST', 'Classes\Instructors\Instructors', 'admin_login');
 $router->add('/instructors/contracts/upload-contract', 'POST', 'Classes\Instructors\Contracts', 'upload_contract');
 $router->add('/instructors/contracts/get-all', 'GET', 'Classes\Instructors\Contracts', 'get_all_contracts');

@@ -15,15 +15,6 @@ class Products extends Users
 {
     use Base, Sanitizer;
 
-    private function check_instructor_permission($instructor_id, $product_slug)
-    {
-        $product = $this->getData("SELECT instructor_id FROM {$this->table['products']} WHERE slug = ?", [$product_slug]);
-        if ($product && $product['instructor_id'] === $instructor_id) {
-            return true;
-        }
-        Response::error('شما دسترسی لازم به این محتوا را ندارید');
-    }
-
     protected function get_products($params, $type, $details_table, $select_fields, $access_types, $not_found_message, $success_message, $response_key)
     {
         $query = $params['q'] ?? null;
@@ -253,7 +244,7 @@ class Products extends Users
             if ($is_instructor) {
                 $instructor_obj = new Instructors();
                 $instructor = $instructor_obj->get_instructor_by_user_id($user['id']);
-                $this->check_instructor_permission($instructor['id'], $slug);
+                $instructor_obj->check_instructor_permission($instructor['id'], $slug);
             }
 
             $digital_link = !empty($typeConfig['details_table']) && $typeConfig['details_table'] === 'book_details' ? ' dt.digital_link, ' : '';
@@ -763,8 +754,9 @@ class Products extends Users
                 $book_path = 'Uploads/Books/';
 
                 if (!empty($params['digital_link'])) {
+                    $full_book_filename = basename($params['digital_link']);
                     $full_book = $this->check_input(
-                        $params['digital_link'],
+                        $full_book_filename,
                         null,
                         'فایل جزوه',
                         '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[a-z0-9]{2,5}$/i'
@@ -772,7 +764,13 @@ class Products extends Users
 
                     $full_book_url = $book_path . $full_book;
                     $full_book_uuid = explode('.', $full_book)[0];
-                    $full_book_files = glob("{$temp_path}{$full_book_uuid}-*.*");
+                    $full_book_files = glob("{$book_path}{$full_book_uuid}-*.*");
+
+                    $new_book_file = true;
+                    if (empty($full_book_files)) {
+                        $full_book_files = glob("{$book_path}{$full_book_uuid}.*");
+                        $new_book_file = false;
+                    }
 
                     if (!$full_book_files || count($full_book_files) === 0) {
                         throw new Exception('فایل کامل جزوه بارگذاری نشده است');
@@ -820,7 +818,9 @@ class Products extends Users
                     $demo_book_url = $book_path . $demo_uuid . '.' . strtolower($format);
                     $demo_pdf->Output('F', $demo_book_url);
 
-                    $this->move_file_by_uuid($full_book_uuid, $temp_path, $book_path, $db, 'جزوه بارگذاری نشده است');
+                    if ($new_book_file) {
+                        $this->move_file_by_uuid($full_book_uuid, $temp_path, $book_path, $db, 'جزوه بارگذاری نشده است');
+                    }
 
                     $book_details = [
                         'pages' => $pages,
@@ -936,7 +936,7 @@ class Products extends Users
 
         } catch (Exception $e) {
             $db->rollback();
-            Response::error($e->getMessage(), null, 400, $db);
+            Response::error($e->getMessage());
         }
     }
 
@@ -1028,7 +1028,7 @@ class Products extends Users
             if (!empty($params['return'])) {
                 $db->rollback();
             }
-            Response::error($e->getMessage(), null, 400, $db);
+            Response::error($e->getMessage());
         }
     }
 

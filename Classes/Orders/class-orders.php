@@ -18,6 +18,25 @@ class Orders extends Carts
     {
         $user = $this->check_role();
 
+        $pending_pay_orders = $this->getData(
+            "SELECT 
+                t.id 
+            FROM {$this->table['transactions']} t
+            JOIN {$this->table['orders']} o ON t.order_id = o.id
+            WHERE t.status = 'pending-pay' AND o.user_id = ?",
+            [$user['id']]
+        );
+
+        if (!empty($pending_pay_orders)) {
+            $pending_pay_orders_count = count($pending_pay_orders);
+            Response::error(
+                "شما $pending_pay_orders_count سفارش پرداخت نشده ندارید، لطفا ابتدا از بخش تراکنش‌ها در پنل کاربری آن"
+                . ($pending_pay_orders_count > 1 ? ' ها' : '')
+                . " را پرداخت و یا لغو کنید"
+            );
+
+        }
+
         $address = $params['address'] ?? null;
 
         $order_items = $this->get_cart_items(['return' => true]);

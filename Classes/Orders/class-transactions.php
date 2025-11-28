@@ -117,6 +117,7 @@ class Transactions extends Orders
         $sql = "SELECT
                     JSON_OBJECT(
                         'id', o.id,
+                        'uuid', o.uuid,
                         'code', o.code,
                         'total_amount', o.total_amount,
                         'discount_amount', o.discount_amount
@@ -277,16 +278,32 @@ class Transactions extends Orders
         ]);
     }
 
-
     public function update_status($params)
     {
-        $admin = $this->check_role(['admin']);
+        $roles = !empty($params['cancel']) ? ['user', 'instructor', 'admin'] : ['admin'];
+        $user = $this->check_role($roles);
 
         $this->check_params($params, ['transaction_uuid', 'status']);
-
-        $new_status = $params['status'];
+        
+        $new_status = !empty($params['cancel']) ? 'canceled' : $params['status'];
         if (!in_array($new_status, ['pending-pay', 'need-approval', 'paid', 'rejected', 'canceled', 'failed'])) {
             Response::error('وضعیت جدید معتبر نیست');
+        }
+
+        if (!empty($params['cancel'])) {
+            $transaction = $this->getData(
+                "SELECT
+                        t.id,
+                        t.status
+                    FROM {$this->table['transactions']} t
+                    JOIN {$this->table['orders']} o ON t.order_id = o.id
+                    WHERE t.uuid = ? AND o.user_id = ?", [$params['transaction_uuid'],$user['id']]);
+            if (empty($transaction)) {
+                Response::error('تراکنش یافت نشد');
+            }
+            if ($transaction['status'] !== 'pending-pay') {
+                Response::error('امکان لغو سفارش وجود ندارد');
+            }
         }
 
         $db = new Database();
