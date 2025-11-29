@@ -237,7 +237,7 @@ class Products extends Users
 
         $digital_link = '';
         $additional_where = " AND p.status = 'verified' AND i.status = 'active' ";
-        if (isset($params['dashboard']) && $params['dashboard'] === true) {
+        if (!empty($params['dashboard'])) {
             $user = $this->check_role(['instructor', 'admin']);
 
             $is_instructor = $user && $user['role'] === 'instructor';
@@ -311,7 +311,7 @@ class Products extends Users
 
         $product = $this->getData($sql, [$slug]);
 
-        if (!$product) {
+        if (empty($product)) {
             Response::error($config['messages']['not_found']);
         }
 
@@ -838,8 +838,7 @@ class Products extends Users
                             'demo_link' => $demo_book_url,
                             'digital_link' => $full_book_url
                         ];
-                    }
-                    else {
+                    } else {
                         $book_details = [
                             'pages' => $current_book['pages'],
                             'format' => $current_book['format'],
@@ -848,8 +847,7 @@ class Products extends Users
                             'digital_link' => $current_book['digital_link']
                         ];
                     }
-                }
-                else if ($current_book) {
+                } else if ($current_book) {
                     $book_details = [
                         'pages' => $current_book['pages'],
                         'format' => $current_book['format'],
@@ -857,8 +855,7 @@ class Products extends Users
                         'demo_link' => $current_book['demo_link'],
                         'digital_link' => $current_book['digital_link']
                     ];
-                }
-                else {
+                } else {
                     throw new Exception('فایل جزوه ارسال نشده است');
                 }
             }
