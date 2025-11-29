@@ -335,23 +335,44 @@ class Orders extends Carts
         ]);
     }
 
-    public function update_item_status($params, bool $response = true, ?Database $db = null)
+    public function update_item_status($params, ?Database $db = null)
     {
-        $admin = $this->check_role(['admin']);
+        $roles = !empty($params['cancel']) ? ['user', 'instructor', 'admin'] : ['admin'];
+        $user = $this->check_role($roles);
 
         $this->check_params($params, ['item_uuid', 'status']);
 
-        $new_status = $params['status'];
+        $return = !empty($params['return']) ? true : false;
+
+        $new_status = !empty($params['cancel']) ? 'canceled' : $params['status'];
         if (!in_array($new_status, ['pending-pay', 'pending-review', 'sending', 'completed', 'rejected', 'canceled'])) {
-            if ($response) {
-                Response::error('وضعیت جدید معتبر نیست');
-            } else {
+            if ($return) {
                 return false;
+            } else {
+                Response::error('وضعیت جدید معتبر نیست');
             }
         }
 
         if ($db === null) {
             $db = new Database();
+        }
+
+        if (!empty($params['cancel'])) {
+            $order = $db->getData(
+                "SELECT
+                        oi.id,
+                        oi.status
+                    FROM {$db->table['order_items']} oi
+                    JOIN {$db->table['orders']} o ON oi.order_id = o.id
+                    WHERE oi.uuid = ? AND o.user_id = ?",
+                [$params['item_uuid'], $user['id']]
+            );
+            if (empty($order)) {
+                Response::error('سفارش یافت نشد');
+            }
+            if ($order['status'] !== 'pending-pay') {
+                Response::error('امکان لغو سفارش وجود ندارد');
+            }
         }
 
         $update_transaction = $db->updateData(
@@ -363,10 +384,10 @@ class Orders extends Carts
         );
 
         if (!$update_transaction) {
-            if ($response) {
-                Response::error('خطا در تغییر وضعیت سفارش');
-            } else {
+            if ($return) {
                 return false;
+            } else {
+                Response::error('خطا در تغییر وضعیت سفارش');
             }
         }
 
@@ -423,10 +444,10 @@ class Orders extends Carts
             );
         }
 
-        if ($response) {
-            Response::success('وضعیت سفارش به روز شد');
-        } else {
+        if ($return) {
             return true;
+        } else {
+            Response::success('وضعیت سفارش به روز شد');
         }
     }
 }

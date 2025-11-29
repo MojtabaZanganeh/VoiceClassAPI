@@ -57,7 +57,7 @@ class Transactions extends Orders
                 WHERE o.uuid = ?",
             [$order_uuid]
         );
-        
+
         if (!$order) {
             Response::error('سفارش یافت نشد');
         }
@@ -284,7 +284,7 @@ class Transactions extends Orders
         $user = $this->check_role($roles);
 
         $this->check_params($params, ['transaction_uuid', 'status']);
-        
+
         $new_status = !empty($params['cancel']) ? 'canceled' : $params['status'];
         if (!in_array($new_status, ['pending-pay', 'need-approval', 'paid', 'rejected', 'canceled', 'failed'])) {
             Response::error('وضعیت جدید معتبر نیست');
@@ -297,7 +297,9 @@ class Transactions extends Orders
                         t.status
                     FROM {$this->table['transactions']} t
                     JOIN {$this->table['orders']} o ON t.order_id = o.id
-                    WHERE t.uuid = ? AND o.user_id = ?", [$params['transaction_uuid'],$user['id']]);
+                    WHERE t.uuid = ? AND o.user_id = ?",
+                [$params['transaction_uuid'], $user['id']]
+            );
             if (empty($transaction)) {
                 Response::error('تراکنش یافت نشد');
             }
@@ -383,9 +385,10 @@ class Transactions extends Orders
                     [
                         'item_uuid' => $item['uuid'],
                         'status' => $item_status,
-                        'access_type' => $item['access_type']
+                        'access_type' => $item['access_type'],
+                        'cancel' => true,
+                        'return' => true
                     ],
-                    false,
                     $db
                 );
 
@@ -453,7 +456,7 @@ class Transactions extends Orders
 
         } catch (Exception $e) {
             $db->rollback();
-            Response::error($e ? $e->getMessage() : 'خطا در بروزرسانی وضعیت تراکنش', null, 400, $db);
+            Response::error($e ? $e->getMessage() : 'خطا در بروزرسانی وضعیت تراکنش', null, 400);
         }
     }
 }

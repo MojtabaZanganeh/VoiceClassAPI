@@ -55,6 +55,7 @@ class Books extends Products
         $user = $this->check_role();
 
         $sql = "SELECT
+                    p.id,
                     p.title,
                     p.thumbnail,
                     JSON_OBJECT(
@@ -92,10 +93,14 @@ class Books extends Products
             Response::success('جزوه ای یافت نشد', 'userBooks', []);
         }
 
+        $review_obj = new Reviews();
+
         foreach ($user_books as &$user_book) {
             $user_book['instructor'] = json_decode($user_book['instructor']);
             $user_book['thumbnail'] = $this->get_full_image_url($user_book['thumbnail']);
             $user_book['digital_link'] = $user_book['digital_link'] ? $this->get_full_image_url($user_book['digital_link']) : null;
+            $user_book['reviewed'] = $review_obj->check_user_reviewed_product($user_book['id']);
+            unset($user_book['id']);
         }
 
         Response::success('جزوات کاربر دریافت شد', 'userBooks', $user_books);

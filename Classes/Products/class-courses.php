@@ -57,6 +57,7 @@ class Courses extends Products
         $user = $this->check_role();
 
         $sql = "SELECT
+                    p.id,
                     p.uuid,
                     p.level,
                     p.title,
@@ -86,9 +87,13 @@ class Courses extends Products
             Response::success('دوره ای یافت نشد', 'userCourses', []);
         }
 
+        $review_obj = new Reviews();
+
         foreach ($user_courses as &$user_course) {
             $user_course['instructor'] = json_decode($user_course['instructor']);
             $user_course['thumbnail'] = $this->get_full_image_url($user_course['thumbnail']);
+            $user_course['reviewed'] = $review_obj->check_user_reviewed_product($user_course['id']);
+            unset($user_course['id']);
         }
 
         Response::success('دوره های کاربر دریافت شد', 'userCourses', $user_courses);

@@ -550,12 +550,14 @@ CREATE TABLE
     reviews (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
+        order_item_id INT UNSIGNED NOT NULL,
         user_id INT UNSIGNED NOT NULL,
         avatar VARCHAR(255),
         rating TINYINT CHECK (rating BETWEEN 1 AND 5),
         comment TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+        FOREIGN KEY (order_item_id) REFERENCES order_items (id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
