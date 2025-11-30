@@ -386,7 +386,7 @@ class Transactions extends Orders
                         'item_uuid' => $item['uuid'],
                         'status' => $item_status,
                         'access_type' => $item['access_type'],
-                        'cancel' => true,
+                        'cancel' => !empty($params['cancel']) ? true : false,
                         'return' => true
                     ],
                     $db
@@ -452,7 +452,7 @@ class Transactions extends Orders
             }
 
             $db->commit();
-            Response::success('وضعیت سفارش به‌روزرسانی شد');
+            Response::success('وضعیت تراکنش به‌روزرسانی شد');
 
         } catch (Exception $e) {
             $db->rollback();

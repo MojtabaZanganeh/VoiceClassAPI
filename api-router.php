@@ -47,10 +47,12 @@ $router->add('/products/get-similar-products', 'GET', 'Classes\Products\Products
 $router->add('/products/get-by-uuid', 'GET', 'Classes\Products\Products', 'get_product_by_uuid');
 $router->add('/products/get-slug-by-short-link', 'GET', 'Classes\Products\Products', 'get_slug_by_short_link');
 
-$router->add('/chapters/get-product-chapters', 'GET', 'Classes\Products\Chapters', 'get_product_chapters');
+$router->add('/products/chapters/get-product-chapters', 'GET', 'Classes\Products\Chapters', 'get_product_chapters');
 
-$router->add('/reviews/get-product-reviews', 'GET', 'Classes\Products\Reviews', 'get_product_reviews');
-$router->add('/reviews/add-product-review', 'POST', 'Classes\Products\Reviews', 'add_product_review');
+$router->add('/products/reviews/get-product-reviews', 'GET', 'Classes\Products\Reviews', 'get_product_reviews');
+$router->add('/products/reviews/add-product-review', 'POST', 'Classes\Products\Reviews', 'add_product_review');
+$router->add('/products/reviews/get-all-reviews', 'GET', 'Classes\Products\Reviews', 'get_all_reviews');
+$router->add('/products/reviews/update-review-status', 'POST', 'Classes\Products\Reviews', 'update_review_status');
 
 $router->add('/categories/get-all', 'GET', 'Classes\Products\Categories', 'get_categories');
 

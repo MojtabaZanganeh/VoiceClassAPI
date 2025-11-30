@@ -56,6 +56,7 @@ class Books extends Products
 
         $sql = "SELECT
                     p.id,
+                    p.uuid,
                     p.title,
                     p.thumbnail,
                     JSON_OBJECT(

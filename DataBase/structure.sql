@@ -549,12 +549,19 @@ CREATE TABLE
 CREATE TABLE
     reviews (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        uuid VARCHAR(36) UNIQUE NOT NULL,
         product_id INT UNSIGNED NOT NULL,
         order_item_id INT UNSIGNED NOT NULL,
         user_id INT UNSIGNED NOT NULL,
-        avatar VARCHAR(255),
-        rating TINYINT CHECK (rating BETWEEN 1 AND 5),
-        comment TEXT,
+        student VARCAR(100) NOT NULL,
+        avatar TEXT,
+        rating TINYINT CHECK (rating BETWEEN 1 AND 5) NOT NULL,
+        comment TEXT NOT NULL,
+        status ENUM (
+            'pending-review',
+            'verified',
+            'rejected'
+        ) DEFAULT 'pending-review' NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
         FOREIGN KEY (order_item_id) REFERENCES order_items (id) ON DELETE CASCADE,

@@ -375,7 +375,7 @@ class Orders extends Carts
             }
         }
 
-        $update_transaction = $db->updateData(
+        $update_order_item = $db->updateData(
             "UPDATE {$db->table['order_items']} SET `status` = ? WHERE uuid = ?",
             [
                 $new_status,
@@ -383,7 +383,7 @@ class Orders extends Carts
             ]
         );
 
-        if (!$update_transaction) {
+        if (!$update_order_item) {
             if ($return) {
                 return false;
             } else {
