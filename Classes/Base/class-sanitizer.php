@@ -225,7 +225,7 @@ trait Sanitizer
 
                 case 'url':
                 case 'link':
-                    if (filter_var($value, FILTER_VALIDATE_URL)) {
+                    if (str_starts_with($value, 'https://') && filter_var($value, FILTER_VALIDATE_URL)) {
                         return $value;
                     }
                     break;
