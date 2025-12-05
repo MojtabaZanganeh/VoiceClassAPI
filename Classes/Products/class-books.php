@@ -95,12 +95,14 @@ class Books extends Products
         }
 
         $review_obj = new Reviews();
+        $links_obj = new Links();
 
         foreach ($user_books as &$user_book) {
             $user_book['instructor'] = json_decode($user_book['instructor']);
             $user_book['thumbnail'] = $this->get_full_image_url($user_book['thumbnail']);
             $user_book['digital_link'] = $user_book['digital_link'] ? $this->get_full_image_url($user_book['digital_link']) : null;
             $user_book['reviewed'] = $review_obj->check_user_reviewed_product($user_book['id']);
+            $user_book['related_links'] = $links_obj->get_product_links($user_book['id']);
             unset($user_book['id']);
         }
 

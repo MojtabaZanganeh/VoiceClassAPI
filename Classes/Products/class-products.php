@@ -9,6 +9,7 @@ use Classes\Base\Database;
 use Classes\Instructors\Instructors;
 use Classes\Users\Users;
 use Exception;
+
 use setasign\Fpdi\Fpdi;
 
 class Products extends Users
@@ -134,6 +135,11 @@ class Products extends Users
                     p.level,
                     p.price,
                     p.discount_amount,
+                    JSON_OBJECT(
+                        'type', ocs.type,
+                        'start_date', ocs.start_date,
+                        'webinar_date', ocs.webinar_date
+                    ) AS online_schedules,
                     p.rating_avg,
                     p.rating_count,
                     p.students,
@@ -144,6 +150,7 @@ class Products extends Users
                 LEFT JOIN {$this->table['users']} u ON i.user_id = u.id
                 LEFT JOIN {$this->table['user_profiles']} up ON u.id = up.user_id
                 LEFT JOIN {$this->table[$details_table]} dt ON p.id = dt.product_id
+                LEFT JOIN {$this->table['online_course_schedules']} ocs ON p.id = ocs.product_id
                     WHERE p.type = ? $where_condition $status_where_condition
                 GROUP BY p.id
                 ORDER BY $sort_condition
@@ -166,6 +173,8 @@ class Products extends Users
             $item['thumbnail'] = $this->get_full_image_url($item['thumbnail']);
             $item['instructor'] = json_decode($item['instructor'], true);
             $item['instructor']['avatar'] = $this->get_full_image_url($item['instructor']['avatar']);
+            $item['online_schedules'] = json_decode($item['online_schedules'], true);
+            $item['online_schedules'] = $item['online_schedules']['type'] ? [$item['online_schedules']] : null;
         }
 
         Response::success($success_message, 'productsData', [
@@ -236,6 +245,7 @@ class Products extends Users
         }
 
         $digital_link = '';
+        $related_links = false;
         $additional_where = " AND p.status = 'verified' AND i.status = 'active' ";
         if (!empty($params['dashboard'])) {
             $user = $this->check_role(['instructor', 'admin']);
@@ -248,6 +258,7 @@ class Products extends Users
             }
 
             $digital_link = !empty($typeConfig['details_table']) && $typeConfig['details_table'] === 'book_details' ? ' dt.digital_link, ' : '';
+            $related_links = true;
             $additional_where = '';
         }
 
@@ -266,6 +277,7 @@ class Products extends Users
         $config = array_merge($defaultConfig, $typeConfig);
 
         $sql = "SELECT
+                    p.id,
                     p.uuid,
                     p.short_link,
                     p.status,
@@ -324,6 +336,13 @@ class Products extends Users
             ? json_decode($product['requirements'], true)
             : null;
         $product['digital_link'] = !empty($product['digital_link']) ? $this->get_full_image_url($product['digital_link']) : null;
+        
+        $links_obj = new Links();
+        $product['related_links'] = $related_links ? $links_obj->get_product_links($product['id']) : null;
+
+        $schedules_obj = new Schedules();
+        $product['online_schedules'] = $product['access_type'] === 'online' ? $schedules_obj->get_schedules($product['id'], !empty($params['dashboard']) ? true : false) : null;
+        unset($product['id']);
 
         $chapter_obj = new Chapters();
         $product['chapters'] = $chapter_obj->get_product_chapters(['product_uuid' => $product['uuid'], 'return' => true]);
@@ -384,7 +403,6 @@ class Products extends Users
         $level = $params['level'];
         if (!in_array($level, ['beginner', 'intermediate', 'advanced', 'expert'])) {
             Response::error('سطح دشواری معتبر نیست');
-
         }
 
         $type = $params['type'];
@@ -463,8 +481,8 @@ class Products extends Users
 
         $product_id = $db->insertData(
             "INSERT INTO {$db->table['products']}
-                        (`uuid`, `status`, `short_link`, `slug`, `category_id`, `instructor_id`, `type`, `thumbnail`, `title`, `introduction`, `description`, `what_you_learn`, `requirements`, `level`, `price`, `discount_amount`, `creator_id`, `created_at`, `updated_at`)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (`uuid`, `status`, `short_link`, `slug`, `category_id`, `instructor_id`, `type`, `thumbnail`, `title`, `introduction`, `description`, `what_you_learn`, `requirements`, `level`, `price`, `discount_amount`, `creator_id`, `created_at`, `updated_at`)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 $uuid,
                 $product_status,
@@ -492,14 +510,24 @@ class Products extends Users
             Response::error('خطا در ثبت محصول', null, 400, $db);
         }
 
+        if (isset($params['links']) && is_array($params['links'])) {
+            $productLinks = new Links();
+            $productLinks->add_product_links($product_id, $params['links'], $db);
+        }
+
+        if ($type === 'course' && $access_type === 'online' && isset($params['schedules']) && is_array($params['schedules'])) {
+            $onlineCourseSchedules = new Schedules();
+            $onlineCourseSchedules->add_schedules($product_id, $params['schedules'], $db);
+        }
+
         $chapter_obj = new Chapters();
         $chapter_data = $chapter_obj->add_chapters($params['chapters'], $product_id, $type, $db);
 
         if ($type === 'course') {
             $product_details = $db->insertData(
                 "INSERT INTO {$db->table['course_details']} 
-                        (`product_id`, `access_type`, `all_lessons_count`, `duration`, `online_price`, `online_discount_amount`) 
-                            VALUES (?, ?, ?, ?, ?, ?)",
+                    (`product_id`, `access_type`, `all_lessons_count`, `duration`, `online_price`, `online_discount_amount`) 
+                        VALUES (?, ?, ?, ?, ?, ?)",
                 [$product_id, $access_type, $chapter_data['lessons_count'], $chapter_data['total_length'], $access_type_price, $access_type_discount_amount]
             );
         } else {
@@ -543,8 +571,8 @@ class Products extends Users
 
             $product_details = $db->insertData(
                 "INSERT INTO {$db->table['book_details']}
-                        (`product_id`, `access_type`, `pages`, `format`, `size`, `all_lessons_count`, `printed_price`, `printed_discount_amount`, `demo_link`, `digital_link`)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (`product_id`, `access_type`, `pages`, `format`, `size`, `all_lessons_count`, `printed_price`, `printed_discount_amount`, `demo_link`, `digital_link`)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $product_id,
                     $access_type,
@@ -577,10 +605,10 @@ class Products extends Users
         if ($product_status === 'need-approval') {
             $instructor_name = $this->getData(
                 "SELECT 
-                            CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS instructor_name
-                        FROM {$this->table['instructors']} i
-                        LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
-                        WHERE i.id = ?",
+                        CONCAT(up.first_name_fa, ' ', up.last_name_fa) AS instructor_name
+                    FROM {$this->table['instructors']} i
+                    LEFT JOIN {$this->table['user_profiles']} up ON i.user_id = up.user_id
+                    WHERE i.id = ?",
                 [$instructor_id]
             )['instructor_name'];
             $submission_date = jdate("Y/m/d H:i", '', '', 'Asia/Tehran', 'en');
@@ -656,9 +684,9 @@ class Products extends Users
 
         $existing_product = $this->getData(
             "SELECT p.*, i.user_id AS instructor_user_id 
-         FROM {$this->table['products']} p
-         LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
-         WHERE p.uuid = ?",
+     FROM {$this->table['products']} p
+     LEFT JOIN {$this->table['instructors']} i ON p.instructor_id = i.id
+     WHERE p.uuid = ?",
             [$params['uuid']]
         );
 
@@ -680,6 +708,20 @@ class Products extends Users
         $current_time = $this->current_time();
 
         try {
+            if (isset($params['links'])) {
+                $linksManager = new Links();
+                $linksManager->update_product_links($product_id, $params['links'], $db);
+            }
+
+            if (
+                $product_type === 'course' && isset($params['access_type']) && $params['access_type'] === 'online' &&
+                isset($params['schedules'])
+            ) {
+
+                $schedulesManager = new Schedules();
+                $schedulesManager->update_schedules($product_id, $params['schedules'], $db);
+            }
+
             $category = $this->getData("SELECT id FROM {$this->table['categories']} WHERE id = ?", [$params['category']]);
             if (!$category) {
                 throw new Exception('دسته بندی یافت نشد');
@@ -755,8 +797,8 @@ class Products extends Users
 
                 $current_book = $this->getData(
                     "SELECT digital_link, demo_link, pages, format, size
-                            FROM {$this->table['book_details']} 
-                            WHERE product_id = ?",
+                        FROM {$this->table['book_details']} 
+                        WHERE product_id = ?",
                     [$product_id]
                 );
 
@@ -862,10 +904,10 @@ class Products extends Users
 
             $result = $db->updateData(
                 "UPDATE {$db->table['products']} SET
-                            `category_id` = ?, `title` = ?, `introduction` = ?, `description` = ?, 
-                            `what_you_learn` = ?, `requirements` = ?, `level` = ?, `price` = ?, 
-                            `discount_amount` = ?, `thumbnail` = ?, `updated_at` = ?
-                        WHERE id = ?",
+                        `category_id` = ?, `title` = ?, `introduction` = ?, `description` = ?, 
+                        `what_you_learn` = ?, `requirements` = ?, `level` = ?, `price` = ?, 
+                        `discount_amount` = ?, `thumbnail` = ?, `updated_at` = ?
+                    WHERE id = ?",
                 [
                     $category['id'],
                     $title,
@@ -912,9 +954,9 @@ class Products extends Users
             if ($product_type === 'course') {
                 $result = $db->updateData(
                     "UPDATE {$db->table['course_details']} SET
-                                `access_type` = ?, `all_lessons_count` = ?, `duration` = ?, 
-                                `online_price` = ?, `online_discount_amount` = ?
-                            WHERE product_id = ?",
+                            `access_type` = ?, `all_lessons_count` = ?, `duration` = ?, 
+                            `online_price` = ?, `online_discount_amount` = ?
+                        WHERE product_id = ?",
                     [
                         $access_type,
                         $lessons_count,
@@ -927,10 +969,10 @@ class Products extends Users
             } else {
                 $result = $db->updateData(
                     "UPDATE {$db->table['book_details']} SET
-                                `access_type` = ?, `pages` = ?, `format` = ?, `size` = ?, 
-                                `all_lessons_count` = ?, `printed_price` = ?, 
-                                `printed_discount_amount` = ?, `demo_link` = ?, `digital_link` = ?
-                            WHERE product_id = ?",
+                            `access_type` = ?, `pages` = ?, `format` = ?, `size` = ?, 
+                            `all_lessons_count` = ?, `printed_price` = ?, 
+                            `printed_discount_amount` = ?, `demo_link` = ?, `digital_link` = ?
+                        WHERE product_id = ?",
                     [
                         $access_type,
                         $book_details['pages'] ?? null,

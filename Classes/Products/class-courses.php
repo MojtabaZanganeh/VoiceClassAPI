@@ -88,11 +88,18 @@ class Courses extends Products
         }
 
         $review_obj = new Reviews();
+        $schedule_obj = new Schedules();
+        $links_obj = new Links();
 
         foreach ($user_courses as &$user_course) {
             $user_course['instructor'] = json_decode($user_course['instructor']);
             $user_course['thumbnail'] = $this->get_full_image_url($user_course['thumbnail']);
             $user_course['reviewed'] = $review_obj->check_user_reviewed_product($user_course['id']);
+            $user_course['related_links'] = $links_obj->get_product_links($user_course['id']);
+            $user_course['online_schedules'] = $user_course['access_type'] === 'online'
+                ? $schedule_obj->get_schedules($user_course['id'], true)
+                : [];
+
             unset($user_course['id']);
         }
 

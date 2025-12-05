@@ -191,6 +191,47 @@ CREATE TABLE
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
     ) ENGINE = InnoDB;
 
+-- لینک های مرتبط
+CREATE TABLE
+    product_links (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        product_id INT UNSIGNED NOT NULL,
+        type ENUM ('online_class', 'related_book', 'support_group') NOT NULL,
+        platform ENUM (
+            'website',
+            'eitaa',
+            'bale',
+            'soroush',
+            'rubika',
+            'gap',
+            'igap',
+            'telegram',
+            'whatsapp',
+            'other'
+        ) DEFAULT 'website' NOT NULL,
+        title VARCHAR(150) NOT NULL,
+        url TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+    ) ENGINE = InnoDB;
+
+-- زمان بندی کلاس آنلاین
+CREATE TABLE
+    online_course_schedules (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        product_id INT UNSIGNED NOT NULL,
+        type ENUM ('recurring', 'webinar') NOT NULL,
+        days_of_week SET ('sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri') NULL,
+        start_date DATE NULL,
+        end_date DATE NULL,
+        webinar_date DATE NULL,
+        start_time TIME NULL,
+        end_time TIME NULL,
+        url TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+    ) ENGINE = InnoDB;
+
 -- سرفصل ها
 CREATE TABLE
     chapters (
@@ -231,7 +272,12 @@ CREATE TABLE
         description TEXT NOT NULL,
         duration INT UNSIGNED DEFAULT NULL,
         max_score INT UNSIGNED NOT NULL,
-        status ENUM ('not-started','in-progress','completed','time-expired') NOT NULL DEFAULT 'not-started';
+        status ENUM (
+            'not-started',
+            'in-progress',
+            'completed',
+            'time-expired'
+        ) NOT NULL DEFAULT 'not-started',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
@@ -553,15 +599,11 @@ CREATE TABLE
         product_id INT UNSIGNED NOT NULL,
         order_item_id INT UNSIGNED NOT NULL,
         user_id INT UNSIGNED NOT NULL,
-        student VARCAR(100) NOT NULL,
+        student VARCAR (100) NOT NULL,
         avatar TEXT,
         rating TINYINT CHECK (rating BETWEEN 1 AND 5) NOT NULL,
         comment TEXT NOT NULL,
-        status ENUM (
-            'pending-review',
-            'verified',
-            'rejected'
-        ) DEFAULT 'pending-review' NOT NULL,
+        status ENUM ('pending-review', 'verified', 'rejected') DEFAULT 'pending-review' NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
         FOREIGN KEY (order_item_id) REFERENCES order_items (id) ON DELETE CASCADE,
