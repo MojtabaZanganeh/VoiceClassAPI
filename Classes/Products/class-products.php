@@ -510,7 +510,7 @@ class Products extends Users
             Response::error('خطا در ثبت محصول', null, 400, $db);
         }
 
-        if (isset($params['links']) && is_array($params['links'])) {
+        if (!empty($params['links']) && is_array($params['links'])) {
             $productLinks = new Links();
             $productLinks->add_product_links($product_id, $params['links'], $db);
         }
@@ -708,7 +708,7 @@ class Products extends Users
         $current_time = $this->current_time();
 
         try {
-            if (isset($params['links'])) {
+            if (!empty($params['links'])) {
                 $linksManager = new Links();
                 $linksManager->update_product_links($product_id, $params['links'], $db);
             }
