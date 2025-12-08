@@ -70,6 +70,7 @@ $router->add('/carts/clear-cart', 'GET', 'Classes\Orders\Carts', 'clear_cart_ite
 $router->add('/carts/sync-cart', 'POST', 'Classes\Orders\Carts', 'sync_cart_items');
 $router->add('/carts/get-items', 'GET', 'Classes\Orders\Carts', 'get_cart_items');
 
+$router->add('/orders/check-user-purchased', 'POST', Classes\Orders\Orders::class, 'check_user_purchased');
 $router->add('/orders/add-order', 'POST', 'Classes\Orders\Orders', 'add_order');
 $router->add('/orders/get-unpaid-order', 'POST', 'Classes\Orders\Orders', 'get_unpaid_order');
 $router->add('/orders/get-all-orders', 'GET', 'Classes\Orders\Orders', 'get_all_order_items');

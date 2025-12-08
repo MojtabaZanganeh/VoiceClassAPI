@@ -29,6 +29,12 @@ class Carts extends Users
             Response::error('محصول یافت نشد');
         }
 
+        $order_obj = new Orders();
+        $purchased = $order_obj->check_user_purchased(['product_uuid' => $item_uuid, 'return' => true]);
+        if ($purchased) {
+            Response::error('شما قبلاً این محصول را خریداری کردید');
+        }
+
         if ($product['status'] !== 'verified' || $product['instructor_active'] != true) {
             Response::error('محصول معتبر نیست');
         }

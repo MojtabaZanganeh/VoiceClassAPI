@@ -199,7 +199,7 @@ class Schedules extends Products
             $schedule['start_date'] = !empty($schedule['start_date']) ? $this->convert_miladi_to_jalali($schedule['start_date']) : null;
             $schedule['end_date'] = !empty($schedule['end_date']) ? $this->convert_miladi_to_jalali($schedule['end_date']) : null;
             $schedule['webinar_date'] = !empty($schedule['webinar_date']) ? $this->convert_miladi_to_jalali($schedule['webinar_date']) : null;
-            $schedule['days_of_week'] = explode(',', $schedule['days_of_week']);
+            $schedule['days_of_week'] = $schedule['type'] === 'recurring' ? explode(',', $schedule['days_of_week']) : null;
         }
 
         return $schedules;

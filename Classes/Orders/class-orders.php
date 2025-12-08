@@ -14,6 +14,31 @@ class Orders extends Carts
 {
     use Base, Sanitizer;
 
+    public function check_user_purchased($params)
+    {
+        $this->check_params($params, ['product_uuid']);
+
+        $user = $this->check_role(response: false);
+
+        $purchased = $user ?
+            $this->getData(
+                "SELECT 1
+                    FROM {$this->table['order_items']} oi
+                    LEFT JOIN {$this->table['orders']} o ON oi.order_id = o.id
+                    LEFT JOIN {$this->table['products']} p ON ? = p.uuid
+                    WHERE oi.product_id = p.id
+                    AND o.user_id = ?
+                    AND oi.status = 'completed'",
+                [$params['product_uuid'], $user['id']]
+            )
+            : false;
+
+        if (!empty($params['return'])) {
+            return $purchased;
+        }
+        Response::success('سفارش کاربر بررسی شد', 'purchased', $purchased);
+    }
+
     public function add_order($params)
     {
         $user = $this->check_role();
@@ -107,6 +132,10 @@ class Orders extends Carts
         $order_item_id = [];
         $free_book_item = false;
         foreach ($order_items as $item) {
+            $purchased = $this->check_user_purchased(['product_uuid' => $item['uuid'], 'return' => true]);
+
+            if ($purchased) continue;
+
             $free_book_item = $item['access_type'] === 'printed' || $item['access_type'] === 'digital' ? true : false;
 
             $item_uuid = $this->generate_uuid();
