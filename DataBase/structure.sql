@@ -196,7 +196,7 @@ CREATE TABLE
     product_links (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         product_id INT UNSIGNED NOT NULL,
-        type ENUM ('online_class', 'related_book', 'support_group') NOT NULL,
+        type ENUM ('online_class', 'related_book', 'file', 'support_group') NOT NULL,
         platform ENUM (
             'website',
             'eitaa',

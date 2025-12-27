@@ -22,7 +22,7 @@ class Links extends Products
         try {
             foreach ($links as $key => $link) {
                 $linkType = $link['type'];
-                if (!in_array($linkType, ['online_class', 'related_book', 'support_group'])) {
+                if (!in_array($linkType, ['online_class', 'related_book', 'file', 'support_group'])) {
                     throw new Exception(message: 'نوع لینک معتبر نیست');
                 }
 
@@ -67,7 +67,7 @@ class Links extends Products
 
             foreach ($links as $key => $link) {
                 $linkType = $link['type'];
-                if (!in_array($linkType, ['online_class', 'related_book', 'support_group'])) {
+                if (!in_array($linkType, ['online_class', 'related_book', 'file', 'support_group'])) {
                     throw new Exception(message: 'نوع لینک معتبر نیست');
                 }
 
